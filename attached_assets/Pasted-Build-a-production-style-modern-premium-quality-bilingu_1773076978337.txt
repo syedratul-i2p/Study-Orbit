@@ -1,0 +1,386 @@
+Build a production-style, modern, premium-quality bilingual web app called "StudyFlow AI" for students in Bangladesh first, with full English and Bangla support across the interface and inside the AI assistant.
+
+Primary goal:
+Create an AI-integrated academic study web app with:
+1. study planning and scheduling,
+2. focus tools like Pomodoro,
+3. progress tracking,
+4. a professional academic AI chatbot,
+5. friend system and direct messaging,
+6. public status and private quick notes,
+7. local-first AI chat history saved on the user's device,
+8. managed email login without requiring a separately deployed custom backend server.
+
+Important architecture constraints:
+- This must be a web app, optimized for mobile and desktop.
+- Make it a PWA, installable on phones.
+- Use a single Replit project.
+- Do not require a separately deployed custom backend server beyond the app itself.
+- It is acceptable to use managed services such as Supabase or Firebase for auth, presence, friends, and messaging.
+- AI assistant chat history must be stored locally on the device by default using IndexedDB or another reliable browser storage solution.
+- User-to-user messaging must support shared cloud delivery using a managed backend because real messaging requires shared storage.
+- Cache friend messages locally as well for fast mobile experience.
+- Add encrypted export/import backup for AI chat history, so users can download a backup file and optionally share it through email manually.
+- Support email magic link or OTP login using a managed auth service.
+- The app should be easy to customize later.
+
+Tech stack:
+- Next.js 14+ with App Router
+- TypeScript
+- Tailwind CSS
+- shadcn/ui components
+- Framer Motion for subtle premium motion
+- Zustand or React Context for lightweight state where appropriate
+- IndexedDB for local-first AI chat history
+- Supabase for authentication, user profile storage, friend system, realtime messaging, and presence
+- Optional Prisma only if necessary, otherwise prefer Supabase directly for simplicity
+- PWA support with manifest, icons, and offline-friendly shell
+- Recharts for dashboards and analytics
+- Lucide icons
+
+Visual direction:
+- Premium, modern, clean, elegant, academic, focused
+- Dark and light mode
+- Default theme should feel premium and professional, not childish
+- Rounded 2xl cards, soft shadows, glassmorphism only in moderation
+- Strong spacing, mobile-first responsive layout
+- Clear typography hierarchy
+- Elegant gradients, but restrained and minimal
+- Smooth transitions and micro-interactions
+- Design should feel like a serious academic productivity platform, not a social media clone
+
+Color and branding:
+- Use a refined academic-tech palette
+- Primary: deep blue or indigo
+- Secondary: teal or emerald accents
+- Neutral background tones for readability
+- Accent colors for progress, revision alerts, success, and focus mode
+- Include a polished logo placeholder with the text "StudyFlow AI"
+
+Target users:
+- Students in Bangladesh first
+- School, college, diploma, university, IELTS, SAT, and competitive exam learners
+- Most users will use Bangla, but English must be fully supported
+- Chatbot should understand Bangla input very well and respond in structured academic Bangla
+- English support must also be first-class
+- Allow language switching at app level: English / বাংলা
+- Allow chatbot reply language preference: Auto / বাংলা / English / Bilingual
+
+Core product modules:
+
+A. Authentication and onboarding
+- Email magic link or OTP login
+- Onboarding wizard after first login
+- Ask for:
+  - full name
+  - username
+  - institution
+  - country
+  - preferred app language
+  - preferred chatbot language
+  - class / level / semester / year
+  - department / group / stream
+  - board / curriculum
+  - study goals
+  - weak subjects
+  - strong subjects
+  - daily preferred study hours
+- Save this profile to managed backend
+- Let user edit profile later
+
+B. Study planner
+- Add, edit, delete subjects
+- Add topics and chapters under each subject
+- Set weekly target hours
+- Set priority level
+- Set deadlines
+- Set revision date
+- Tag topic type:
+  - reading
+  - practice
+  - revision
+  - memorization
+  - problem solving
+  - mock test
+- Daily and weekly planner views
+- Calendar-based schedule
+- Study session cards
+- Mark tasks as completed, partial, missed
+- Show overdue and revision due items
+
+C. Focus system
+- Pomodoro timer
+- Deep work timer
+- Custom timer
+- Presets: 25/5, 50/10, 90/15
+- Focus session completion tracking
+- Fullscreen focus mode
+- Session note field
+- At session end, prompt for:
+  - what was studied
+  - how well it went
+  - whether revision is needed
+- Save focus analytics
+
+D. Progress dashboard
+- Daily study minutes
+- Weekly study hours
+- Monthly progress chart
+- Subject-wise time distribution
+- Current streak
+- Completion rate
+- Weak subject alerts
+- Revision due reminders
+- Focus score
+- Beautiful charts and summary cards
+
+E. AI academic assistant
+This is a major feature. Build a professional AI assistant panel with conversation UI.
+
+Requirements:
+- Works in Bangla and English
+- Strong Bangla academic response quality
+- Detect input language and reply accordingly if set to Auto
+- Professional, academic tone only
+- No slang
+- No childish motivational fluff
+- Structured responses with headings and bullets where relevant
+- For concept questions, use:
+  - definition
+  - explanation
+  - example
+  - key points
+  - short exam answer
+- For math / technical problems, use:
+  - given
+  - formula
+  - steps
+  - final answer
+  - common mistakes
+- For theory questions, use:
+  - introduction
+  - core concept
+  - explanation
+  - comparison if relevant
+  - conclusion
+- Adjust answer level using user academic profile:
+  - class / year / semester
+  - department
+  - subject context
+  - board / curriculum
+- Allow selecting current subject context before asking
+- Add quick actions:
+  - Explain Simply
+  - Give Short Answer
+  - Give Exam Style Answer
+  - Make MCQ
+  - Make Quiz
+  - Make Revision Notes
+  - Translate to Bangla
+  - Translate to English
+- Add support for saving AI conversations locally on device using IndexedDB
+- AI chat history should remain on the device by default
+- Add encrypted export backup and import restore for AI chats
+- Add chat search for local AI history
+- Add pin / favorite chat option locally
+
+AI integration design:
+- Create a provider abstraction layer
+- Support both OpenAI-compatible and Anthropic-compatible API usage patterns if possible
+- Use environment variables like:
+  - AI_PROVIDER
+  - AI_API_KEY
+  - AI_MODEL
+  - AI_BASE_URL
+- Keep the AI call logic modular and replaceable
+- Add rate-limit protection and error handling
+- Add well-designed loading, retry, and fallback states
+- Provide a strong default system prompt inside the app code for academic behavior
+- Do not hallucinate certainty when context is unclear
+- When unsure, tell the student what is missing
+
+F. Friend system
+- Search users by username or name
+- Send friend request
+- Accept / reject request
+- Friend list page
+- Remove friend
+- Block user
+- Report user
+- Show online / last active if possible
+
+G. Messaging
+- One-to-one messaging
+- Realtime updates using managed backend
+- Text messages first
+- Seen status
+- Delivered state if possible
+- Timestamps
+- Mobile-friendly chat layout
+- Message composer with polished UI
+- Share from study planner into chat:
+  - subject
+  - topic
+  - progress card
+  - short note
+- Store cloud copy for delivery and local cache for smooth experience
+- Basic abuse protection and report entry point
+
+H. Status and notes
+- Public short profile status, 1 to 3 short lines
+- Examples:
+  - Revising Physics today
+  - IELTS vocabulary sprint
+  - Need help with circuit theory
+- Private quick note widget only visible to the user
+- Quick note should appear on dashboard
+- Public status should appear on profile and friend list cards
+
+I. Localization and language system
+- Full app localization for English and Bangla
+- Add a clean language switcher
+- Use a dictionary-based i18n structure
+- Keep Bangla copy professional and clear
+- Ensure chatbot UI labels and helper text are bilingual-ready
+- Default to Bangla if the user selected Bangla in onboarding
+
+J. Data persistence design
+- User account, profile, friends, public status, and realtime messages:
+  use Supabase or equivalent managed service
+- AI assistant chats:
+  local-first on device using IndexedDB
+- Cache recent planner data locally for performance
+- Add clear sync boundaries:
+  - Local only: AI chat history
+  - Cloud + local cache: user profile, planner, friends, messaging
+- Add a settings page explaining what is stored locally vs in cloud
+
+K. Pages to create
+1. Landing page
+2. Login page
+3. Onboarding flow
+4. Dashboard
+5. Subjects page
+6. Subject detail page
+7. Planner page
+8. Focus page
+9. AI assistant page
+10. Friends page
+11. Messages page
+12. Profile page
+13. Settings page
+14. Help / FAQ page
+
+L. Landing page content
+- Hero section
+- Product value proposition
+- AI academic help highlight
+- Planner highlight
+- Focus tools highlight
+- Friend study collaboration highlight
+- Bilingual support highlight
+- Professional screenshots placeholders
+- CTA for Get Started
+
+M. Dashboard layout
+- Welcome header
+- Today’s plan
+- Quick add subject/task
+- Start focus session card
+- Ask AI box
+- Progress summary
+- Revision due
+- Streak card
+- Private quick note widget
+- Friend updates or statuses in a minimal, non-distracting panel
+
+N. UI/UX requirements
+- Mobile-first and tablet-friendly
+- Responsive sidebar on desktop
+- Bottom navigation on mobile for key areas:
+  - Home
+  - Planner
+  - Focus
+  - AI
+  - Messages
+- Clean empty states
+- Skeleton loading states
+- Success toasts
+- Error toasts
+- Accessible contrast and keyboard usability
+- Premium polished finish, no raw-looking developer UI
+
+O. Database / schema guidance
+Design tables or collections for:
+- users
+- academic_profiles
+- subjects
+- topics
+- study_sessions
+- planner_items
+- progress_logs
+- focus_sessions
+- friend_requests
+- friendships
+- conversations
+- conversation_members
+- messages
+- public_statuses
+- private_notes
+Keep AI chats local by default, not in remote database.
+
+P. Security and moderation
+- Input validation
+- Rate limiting for AI requests
+- Sanitize user content
+- Block/report workflows
+- Basic profanity or abuse filter for public status and messaging
+- Protect environment variables
+- Do not expose AI secret keys in frontend
+- Use server-side routes for AI calls inside the app
+
+Q. PWA requirements
+- Installable manifest
+- App icons
+- Splash screen basics
+- Offline-friendly shell for main navigation
+- Local AI chats accessible offline
+- Graceful offline state for cloud features
+
+R. Demo content
+- Seed with realistic demo subjects and example planner items
+- Include sample Bangla and English chatbot conversations
+- Include a polished empty-state experience
+
+S. Code quality requirements
+- Use clean folder structure
+- Reusable components
+- Strong typing
+- Helpful comments only where needed
+- No broken placeholders
+- No fake buttons without functionality unless clearly marked
+- Add README with setup instructions
+- Add .env.example with all required environment variables
+- Make the project runnable on Replit with minimal setup
+
+T. Deliverables
+Generate:
+1. Complete app codebase
+2. Responsive polished UI
+3. Sample data / seed where useful
+4. Local IndexedDB chat storage for AI assistant
+5. Managed auth and messaging integration scaffolding
+6. README with:
+   - how to set up environment variables
+   - how to connect Supabase
+   - how to plug in AI API key
+   - how local chat backup works
+   - how to run and deploy on Replit
+
+Important product behavior notes:
+- The app language must support English and Bangla.
+- The AI assistant must be especially strong in Bangla academic response quality.
+- Keep the UI premium, modern, professional, and elegant.
+- Do not turn the social features into a distracting feed.
+- Keep the app focused on study, discipline, academic support, and student collaboration.
+- Make the result feel startup-quality, not like a rough prototype.
