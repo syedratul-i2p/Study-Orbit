@@ -21,4 +21,5 @@ replit.nix
 *.key
 *.cert
 
-attached_assets
+attached_assets.codex/
+.codex/

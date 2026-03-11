@@ -177,7 +177,11 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply min-h-screen font-sans antialiased bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at top, hsl(var(--primary) / 0.08), transparent 26rem),
+      radial-gradient(circle at bottom right, hsl(var(--accent) / 0.32), transparent 24rem);
+    background-attachment: fixed;
   }
 }
 
@@ -290,5 +294,43 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
+  }
+}
+
+
+@layer components {
+  .app-shell-main {
+    @apply relative flex-1 overflow-x-hidden pb-24 md:pb-0;
+  }
+
+  .app-shell-main::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 18rem;
+    pointer-events: none;
+    background: linear-gradient(180deg, hsl(var(--background) / 0.9) 0%, hsl(var(--background) / 0) 100%);
+  }
+
+  .app-page {
+    @apply relative mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8;
+  }
+
+  .app-surface {
+    @apply rounded-[1.75rem] border border-border/70 shadow-[0_20px_60px_-32px_rgba(15,23,42,0.32)] backdrop-blur-xl;
+    background-color: hsl(var(--card) / 0.88);
+  }
+
+  .app-section-header {
+    @apply flex items-start justify-between gap-4;
+  }
+
+  .app-kicker {
+    @apply inline-flex items-center gap-2 rounded-full border border-border/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground shadow-sm;
+    background-color: hsl(var(--background) / 0.72);
+  }
+
+  .safe-bottom-nav {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
   }
 }

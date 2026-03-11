@@ -19,10 +19,10 @@ const fadeSlide = {
   exit: { opacity: 0, x: -20 },
 };
 
-const inputClass = "pl-10 h-12 rounded-xl border-border/60 bg-muted/30 text-sm transition-all duration-200 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/15 hover:border-border placeholder:text-muted-foreground/50";
+const inputClass = "h-12 rounded-2xl border-border/60 bg-background/70 pl-10 text-sm shadow-sm transition-all duration-200 placeholder:text-muted-foreground/50 hover:border-border focus:border-primary/45 focus:bg-background focus:ring-4 focus:ring-primary/10";
 const inputClassWithRight = inputClass + " pr-11";
-const labelClass = "text-[13px] font-semibold text-foreground/80 tracking-wide";
-const iconClass = "absolute left-3.5 top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-muted-foreground/60";
+const labelClass = "text-[12px] font-semibold uppercase tracking-[0.2em] text-muted-foreground";
+const iconClass = "absolute left-3.5 top-1/2 h-[15px] w-[15px] -translate-y-1/2 text-muted-foreground/60";
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -129,7 +129,7 @@ function OTPInput({ value, onChange, length = 6 }: { value: string; onChange: (v
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={handlePaste}
-          className="w-12 h-14 text-center text-lg font-bold rounded-xl border-2 border-border/60 bg-muted/30 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-background hover:border-border outline-none"
+          className="h-14 w-12 rounded-2xl border border-border/60 bg-background/75 text-center text-lg font-semibold shadow-sm transition-all duration-200 outline-none hover:border-border focus:border-primary/45 focus:bg-background focus:ring-4 focus:ring-primary/10"
           data-testid={`otp-digit-${i}`}
         />
       ))}
@@ -140,57 +140,79 @@ function OTPInput({ value, onChange, length = 6 }: { value: string; onChange: (v
 function AuthSidePanel() {
   const { t } = useLanguage();
   return (
-    <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-indigo-600 via-blue-600 to-violet-700 dark:from-indigo-800 dark:via-blue-800 dark:to-violet-900 p-10 flex-col justify-between relative overflow-hidden">
+    <div className="relative hidden min-h-screen overflow-hidden border-r border-white/10 bg-[linear-gradient(160deg,#2448d8_0%,#1d4ed8_38%,#155e75_100%)] px-10 py-12 text-white lg:flex lg:w-[48%] lg:flex-col">
       <div className="absolute inset-0">
-        <div className="absolute top-10 left-10 w-72 h-72 rounded-full bg-white/10 blur-3xl animate-pulse" style={{ animationDuration: "6s" }} />
-        <div className="absolute bottom-20 right-10 w-56 h-56 rounded-full bg-white/8 blur-3xl animate-pulse" style={{ animationDuration: "8s", animationDelay: "2s" }} />
-        <div className="absolute top-1/2 left-1/3 w-40 h-40 rounded-full bg-white/6 blur-2xl animate-pulse" style={{ animationDuration: "10s", animationDelay: "4s" }} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_26rem)]" />
+        <div className="absolute -left-16 top-16 h-64 w-64 rounded-full bg-white/12 blur-3xl" />
+        <div className="absolute bottom-12 right-0 h-72 w-72 rounded-full bg-cyan-200/12 blur-3xl" />
       </div>
 
-      <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-black/10">
-            <GraduationCap className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-white font-bold text-xl tracking-tight">{t.app.name}</span>
+      <div className="relative z-10 flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 bg-white/15 backdrop-blur-sm shadow-lg shadow-black/15">
+          <GraduationCap className="h-6 w-6 text-white" />
+        </div>
+        <div>
+          <p className="text-lg font-semibold tracking-tight">{t.app.name}</p>
+          <p className="text-sm text-white/70">Structure. Focus. Mastery.</p>
         </div>
       </div>
 
-      <div className="relative z-10 space-y-8">
+      <div className="relative z-10 my-auto max-w-xl space-y-8">
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/78">
+          <Sparkles className="h-3.5 w-3.5" />
+          {t.landing.heroTag}
+        </div>
         <div>
-          <h2 className="text-white text-3xl font-bold leading-tight mb-3">
+          <h2 className="max-w-lg text-4xl font-semibold leading-tight tracking-tight xl:text-5xl">
             {t.landing.hero}
           </h2>
-          <p className="text-white/60 text-sm leading-relaxed max-w-sm">
+          <p className="mt-4 max-w-md text-base leading-7 text-white/72">
             {t.landing.heroSub}
           </p>
         </div>
 
-        <div className="space-y-3.5">
+        <div className="grid gap-3">
           {[
-            { icon: Brain, text: "AI-powered academic guidance", delay: 0.1 },
-            { icon: BookOpen, text: "Structured study planning", delay: 0.2 },
-            { icon: Sparkles, text: "Track progress & stay focused", delay: 0.3 },
-            { icon: Shield, text: "Secure & private platform", delay: 0.4 },
-          ].map(({ icon: Icon, text, delay }, i) => (
+            { icon: Brain, title: "AI guidance", text: "Ask, revise, and explain difficult topics in study-friendly steps." },
+            { icon: BookOpen, title: "Study structure", text: "Keep subjects, planner blocks, and focus sessions in one calm workspace." },
+            { icon: Shield, title: "Private by default", text: "Sessions, backups, and progress stay connected to your account experience." },
+          ].map(({ icon: Icon, title, text }, i) => (
             <motion.div
-              key={i}
+              key={title}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay }}
-              className="flex items-center gap-3 group"
+              transition={{ duration: 0.4, delay: 0.08 * i }}
+              className="rounded-[1.5rem] border border-white/14 bg-white/8 p-4 backdrop-blur-sm"
             >
-              <div className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:bg-white/15 transition-colors duration-300">
-                <Icon className="w-4 h-4 text-white/85" />
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-white/14">
+                  <Icon className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">{title}</p>
+                  <p className="mt-1 text-sm leading-6 text-white/68">{text}</p>
+                </div>
               </div>
-              <span className="text-white/75 text-sm font-medium">{text}</span>
             </motion.div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { value: "2", label: "Languages" },
+            { value: "24/7", label: "Study support" },
+            { value: "All-in-1", label: "Workspace" },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-[1.35rem] border border-white/12 bg-white/8 px-4 py-3 text-center backdrop-blur-sm">
+              <p className="text-xl font-semibold tracking-tight">{stat.value}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.2em] text-white/62">{stat.label}</p>
+            </div>
           ))}
         </div>
       </div>
 
-      <div className="relative z-10">
-        <p className="text-white/30 text-xs font-medium tracking-wide">Study Orbit — Structure. Focus. Mastery.</p>
+      <div className="relative z-10 text-xs font-medium uppercase tracking-[0.24em] text-white/40">
+        {t.landing.platformFeatures}
       </div>
     </div>
   );
@@ -199,20 +221,27 @@ function AuthSidePanel() {
 function AuthFormContainer({ children }: { children: React.ReactNode }) {
   const { t } = useLanguage();
   return (
-    <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-gradient-to-b from-background via-background to-muted/20">
+    <div className="relative flex min-h-screen flex-1 items-center justify-center overflow-hidden px-4 py-8 sm:px-6 lg:px-10">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.12),transparent_18rem)]" />
+      <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-background via-background/90 to-transparent" />
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[440px]"
+        className="relative z-10 w-full max-w-[32rem]"
       >
-        <div className="lg:hidden flex items-center gap-3 mb-10">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <GraduationCap className="w-6 h-6 text-white" />
+        <div className="rounded-[2rem] border border-card-border/80 bg-card/92 p-6 shadow-[0_20px_70px_-28px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-8">
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-500 shadow-lg shadow-indigo-500/25">
+              <GraduationCap className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-lg font-semibold tracking-tight">{t.app.name}</p>
+              <p className="text-sm text-muted-foreground">{t.app.tagline}</p>
+            </div>
           </div>
-          <span className="font-bold text-xl tracking-tight">{t.app.name}</span>
+          {children}
         </div>
-        {children}
       </motion.div>
     </div>
   );
@@ -222,7 +251,7 @@ function PremiumButton({ children, loading, ...props }: { children: React.ReactN
   return (
     <Button
       {...props}
-      className={`w-full h-12 font-semibold text-sm rounded-xl shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/15 active:scale-[0.98] transition-all duration-200 ${props.className || ""}`}
+      className={`h-12 w-full rounded-2xl bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/25 active:scale-[0.99] ${props.className || ""}`}
     >
       {loading && <Loader2 className="mr-2 w-4 h-4 animate-spin" />}
       {children}
@@ -308,14 +337,14 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[1.08fr_0.92fr]">
       <AuthSidePanel />
       <AuthFormContainer>
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" data-testid="text-login-title">
+        <div className="mb-8 space-y-3">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-[2rem]" data-testid="text-login-title">
             {t.auth.welcomeBack}
           </h1>
-          <p className="text-muted-foreground/70 mt-2 text-sm">{t.auth.loginSubtitle}</p>
+          <p className="max-w-md text-sm leading-6 text-muted-foreground">{t.auth.loginSubtitle}</p>
         </div>
 
         <AnimatePresence mode="wait">
@@ -324,7 +353,7 @@ export function LoginPage() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="mb-5 flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/8 border border-destructive/15"
+              className="mb-5 flex items-start gap-2.5 rounded-2xl border border-destructive/20 bg-destructive/8 px-4 py-3.5 shadow-sm"
               data-testid="text-form-error"
             >
               <XCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
@@ -403,7 +432,7 @@ export function LoginPage() {
 
               <Button
                 variant="outline"
-                className="w-full h-12 rounded-xl border-border/60 hover:bg-muted/40 hover:border-border transition-all duration-200 font-medium text-sm"
+                className="h-12 w-full rounded-2xl border-border/70 bg-background/60 text-sm font-semibold shadow-sm transition-all duration-200 hover:bg-muted/40"
                 onClick={() => { setMode("otp-send"); setFormError(""); setErrors({}); }}
                 data-testid="button-login-otp"
               >
@@ -417,7 +446,7 @@ export function LoginPage() {
             <motion.div key="otp-send" {...fadeSlide} transition={{ duration: 0.25 }}>
               <button
                 onClick={() => { setMode("password"); setFormError(""); setErrors({}); }}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground/70 hover:text-foreground mb-6 transition-colors group"
+                className="group mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground/75 transition-colors hover:text-foreground"
                 data-testid="button-back-login"
               >
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> {t.auth.loginWithPassword}
@@ -456,7 +485,7 @@ export function LoginPage() {
             <motion.div key="otp-verify" {...fadeSlide} transition={{ duration: 0.25 }}>
               <button
                 onClick={() => { setMode("otp-send"); setFormError(""); }}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground/70 hover:text-foreground mb-6 transition-colors group"
+                className="group mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground/75 transition-colors hover:text-foreground"
                 data-testid="button-back-otp-send"
               >
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> {t.common.back}
@@ -480,7 +509,7 @@ export function LoginPage() {
           )}
         </AnimatePresence>
 
-        <p className="text-center text-sm text-muted-foreground/70 mt-9">
+        <p className="mt-9 text-center text-sm text-muted-foreground/75">
           {t.auth.noAccount}{" "}
           <button
             onClick={() => navigate("/register")}
@@ -542,14 +571,14 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[1.08fr_0.92fr]">
       <AuthSidePanel />
       <AuthFormContainer>
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" data-testid="text-register-title">
+        <div className="mb-8 space-y-3">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-[2rem]" data-testid="text-register-title">
             {t.auth.joinUs}
           </h1>
-          <p className="text-muted-foreground/70 mt-2 text-sm">{t.auth.registerSubtitle}</p>
+          <p className="max-w-md text-sm leading-6 text-muted-foreground">{t.auth.registerSubtitle}</p>
         </div>
 
         <AnimatePresence>
@@ -558,7 +587,7 @@ export function RegisterPage() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="mb-5 flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/8 border border-destructive/15"
+              className="mb-5 flex items-start gap-2.5 rounded-2xl border border-destructive/20 bg-destructive/8 px-4 py-3.5 shadow-sm"
               data-testid="text-form-error"
             >
               <XCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
@@ -568,7 +597,7 @@ export function RegisterPage() {
         </AnimatePresence>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className={labelClass}>{t.auth.fullName}</Label>
               <div className="relative">
@@ -590,7 +619,7 @@ export function RegisterPage() {
                 <Input
                   value={form.username}
                   onChange={(e) => updateField("username", e.target.value)}
-                  className={`pl-8 h-12 rounded-xl border-border/60 bg-muted/30 text-sm transition-all duration-200 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/15 hover:border-border placeholder:text-muted-foreground/50 ${errors.username ? "border-destructive/50" : ""}`}
+                  className={`h-12 rounded-2xl border-border/60 bg-background/70 pl-8 text-sm shadow-sm transition-all duration-200 placeholder:text-muted-foreground/50 hover:border-border focus:border-primary/45 focus:bg-background focus:ring-4 focus:ring-primary/10 ${errors.username ? "border-destructive/50" : ""}`}
                   placeholder="username"
                   data-testid="input-username"
                 />
@@ -642,7 +671,7 @@ export function RegisterPage() {
           </PremiumButton>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground/70 mt-9">
+        <p className="mt-9 text-center text-sm text-muted-foreground/75">
           {t.auth.hasAccount}{" "}
           <button
             onClick={() => navigate("/login")}
@@ -730,12 +759,12 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[1.08fr_0.92fr]">
       <AuthSidePanel />
       <AuthFormContainer>
         <button
           onClick={() => navigate("/login")}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground/70 hover:text-foreground mb-6 transition-colors group"
+          className="group mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground/75 transition-colors hover:text-foreground"
           data-testid="button-back-to-login"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> {t.auth.signIn}
@@ -747,7 +776,7 @@ export function ForgotPasswordPage() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="mb-5 flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/8 border border-destructive/15"
+              className="mb-5 flex items-start gap-2.5 rounded-2xl border border-destructive/20 bg-destructive/8 px-4 py-3.5 shadow-sm"
               data-testid="text-form-error"
             >
               <XCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
@@ -869,3 +898,6 @@ export function ForgotPasswordPage() {
     </div>
   );
 }
+
+
+
