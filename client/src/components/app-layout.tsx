@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { useLanguage } from "@/lib/languageContext";
@@ -35,11 +35,12 @@ import {
   Languages,
   Users,
   MessageCircle,
+  Sparkles,
 } from "lucide-react";
 
 function AppSidebar() {
   const { t } = useLanguage();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [location] = useLocation();
 
   const items = [
@@ -56,42 +57,53 @@ function AppSidebar() {
   ];
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-            <GraduationCap className="w-5 h-5 text-white" />
+    <Sidebar className="p-3">
+      <SidebarHeader className="rounded-[1.5rem] border border-sidebar-border/80 bg-sidebar/90 px-4 py-4 shadow-sm backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-500 shadow-lg shadow-indigo-500/20">
+            <GraduationCap className="h-5 w-5 text-white" />
           </div>
-          <span className="font-semibold text-base">{t.app.name}</span>
+          <div className="min-w-0">
+            <p className="truncate text-base font-semibold tracking-tight">{t.app.name}</p>
+            <p className="text-xs text-muted-foreground">{t.app.tagline}</p>
+          </div>
+        </div>
+        <div className="mt-4 rounded-2xl border border-sidebar-border/70 bg-background/70 px-3 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">{t.dashboard.welcome}</p>
+          <p className="mt-1 truncate text-sm font-semibold text-foreground">{user?.fullName || t.app.name}</p>
+          <p className="truncate text-xs text-muted-foreground">@{user?.username || "studyorbit"}</p>
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
+      <SidebarContent className="mt-3">
+        <SidebarGroup className="rounded-[1.5rem] border border-sidebar-border/80 bg-sidebar/85 p-3 shadow-sm backdrop-blur-sm">
           <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild data-active={location === item.url}>
-                    <Link href={item.url}>
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className="gap-1.5">
+              {items.map((item) => {
+                const active = location === item.url || (item.url !== "/dashboard" && location.startsWith(item.url));
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={active} className="h-11 rounded-2xl px-3 text-[13px] font-medium">
+                      <Link href={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="pt-3">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="w-full justify-start"
+          className="w-full justify-start rounded-2xl border-sidebar-border/80 bg-sidebar/90 px-3 py-2.5 text-[13px] font-medium shadow-sm"
           onClick={() => logout()}
           data-testid="button-logout"
         >
-          <LogOut className="w-4 h-4 mr-2" />
+          <LogOut className="mr-2 h-4 w-4" />
           {t.nav.logout}
         </Button>
       </SidebarFooter>
@@ -112,21 +124,26 @@ function MobileNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t md:hidden">
-      <nav className="flex items-center justify-around h-14">
-        {items.map((item) => (
-          <Link key={item.url} href={item.url}>
-            <button
-              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-md transition-colors ${
-                location === item.url ? "text-primary" : "text-muted-foreground"
-              }`}
-              data-testid={`nav-mobile-${item.url.slice(1)}`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{item.title}</span>
-            </button>
-          </Link>
-        ))}
+    <div className="safe-bottom-nav fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/85 px-3 pt-2 backdrop-blur-xl md:hidden">
+      <nav className="mx-auto flex h-16 max-w-xl items-center justify-between gap-1 rounded-[1.5rem] border border-border/70 bg-card/90 px-2 shadow-lg shadow-black/5">
+        {items.map((item) => {
+          const active = location === item.url;
+          return (
+            <Link key={item.url} href={item.url}>
+              <button
+                className={`flex min-w-[3.75rem] flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold transition-all ${
+                  active
+                    ? "bg-primary/12 text-primary shadow-sm"
+                    : "text-muted-foreground hover:bg-muted/60"
+                }`}
+                data-testid={`nav-mobile-${item.url.slice(1)}`}
+              >
+                <item.icon className="h-4 w-4" />
+                <span className="truncate">{item.title}</span>
+              </button>
+            </Link>
+          );
+        })}
       </nav>
     </div>
   );
@@ -134,16 +151,40 @@ function MobileNav() {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { theme, toggleTheme } = useTheme();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
+  const { user } = useAuth();
+  const [location] = useLocation();
 
   useEffect(() => {
     startAutoSnapshots();
   }, []);
 
   const style = {
-    "--sidebar-width": "16rem",
-    "--sidebar-width-icon": "3rem",
+    "--sidebar-width": "17rem",
+    "--sidebar-width-icon": "3.25rem",
   };
+
+  const pageMeta = useMemo(() => {
+    if (location.startsWith("/subjects/")) {
+      return { title: t.nav.subjects, subtitle: t.dashboard.todaysPlan };
+    }
+
+    const items = [
+      { url: "/dashboard", title: t.nav.home, subtitle: t.app.tagline },
+      { url: "/subjects", title: t.nav.subjects, subtitle: t.subjects.title },
+      { url: "/planner", title: t.nav.planner, subtitle: t.planner.title },
+      { url: "/focus", title: t.nav.focus, subtitle: t.focus.title },
+      { url: "/ai", title: t.nav.ai, subtitle: t.ai.title },
+      { url: "/progress", title: t.nav.progress, subtitle: t.progress.title },
+      { url: "/friends", title: t.nav.friends, subtitle: t.friends.title },
+      { url: "/chat", title: t.nav.chat, subtitle: t.chat.title },
+      { url: "/profile", title: t.nav.profile, subtitle: t.profile.title },
+      { url: "/settings", title: t.nav.settings, subtitle: t.settings.title },
+    ];
+
+    return items.find((item) => location === item.url || (item.url !== "/dashboard" && location.startsWith(item.url)))
+      || { title: t.app.name, subtitle: t.app.tagline };
+  }, [location, t]);
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
@@ -151,37 +192,55 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="hidden md:block">
           <AppSidebar />
         </div>
-        <div className="flex flex-col flex-1 min-w-0">
-          <header className="flex items-center justify-between gap-1 p-2 border-b sticky top-0 z-40 bg-background/80 backdrop-blur-md">
-            <div className="flex items-center gap-1">
-              <SidebarTrigger data-testid="button-sidebar-toggle" className="hidden md:flex" />
-              <div className="flex md:hidden items-center gap-2 pl-2">
-                <div className="w-7 h-7 rounded-md bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
-                  <GraduationCap className="w-4 h-4 text-white" />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-40 border-b border-border/70 bg-background/72 backdrop-blur-xl">
+            <div className="app-page flex items-center justify-between gap-3 py-4 sm:py-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <SidebarTrigger
+                  data-testid="button-sidebar-toggle"
+                  className="hidden rounded-2xl border border-border/70 bg-card/85 shadow-sm md:flex"
+                />
+                <div className="flex md:hidden items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-500 shadow-lg shadow-indigo-500/20">
+                    <GraduationCap className="h-5 w-5 text-white" />
+                  </div>
                 </div>
-                <span className="font-semibold text-sm">Study Orbit</span>
+                <div className="min-w-0">
+                  <div className="app-kicker hidden sm:inline-flex">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    {pageMeta.title}
+                  </div>
+                  <p className="mt-0 text-lg font-semibold tracking-tight sm:mt-2 sm:text-2xl">{pageMeta.title}</p>
+                  <p className="truncate text-sm text-muted-foreground">{pageMeta.subtitle}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="hidden rounded-2xl border border-border/70 bg-card/85 px-3 py-2 text-right shadow-sm sm:block">
+                  <p className="text-xs font-semibold text-foreground">{user?.fullName?.split(" ")[0] || t.app.name}</p>
+                  <p className="text-[11px] text-muted-foreground">{language === "en" ? "English" : "Bangla"}</p>
+                </div>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="rounded-2xl bg-card/85 shadow-sm"
+                  onClick={() => setLanguage(language === "en" ? "bn" : "en")}
+                  data-testid="button-language-toggle"
+                >
+                  <Languages className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="rounded-2xl bg-card/85 shadow-sm"
+                  onClick={toggleTheme}
+                  data-testid="button-theme-toggle"
+                >
+                  {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setLanguage(language === "en" ? "bn" : "en")}
-                data-testid="button-language-toggle"
-              >
-                <Languages className="w-4 h-4" />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={toggleTheme}
-                data-testid="button-theme-toggle"
-              >
-                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
-            </div>
           </header>
-          <main className="flex-1 overflow-auto pb-16 md:pb-0">
+          <main className="app-shell-main">
             {children}
           </main>
         </div>
@@ -191,3 +250,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
