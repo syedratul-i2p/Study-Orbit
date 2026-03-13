@@ -5,7 +5,6 @@ import { rm, readFile } from "fs/promises";
 // server deps to bundle to reduce openat(2) syscalls
 // which helps cold start times
 const allowlist = [
-  "bcrypt",
   "date-fns",
   "drizzle-orm",
   "drizzle-zod",
@@ -14,7 +13,6 @@ const allowlist = [
   "memorystore",
   "multer",
   "openai",
-  "pg",
   "ws",
   "zod",
   "zod-validation-error",
@@ -32,7 +30,7 @@ async function buildAll() {
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
   ];
-  const externals = allDeps.filter((dep) => !allowlist.includes(dep));
+  const externals = [...allDeps.filter((dep) => !allowlist.includes(dep)), "pg-native"];
 
   await esbuild({
     entryPoints: ["server/index.ts"],
@@ -42,6 +40,8 @@ async function buildAll() {
     outfile: "dist/index.cjs",
     define: {
       "process.env.NODE_ENV": '"production"',
+      "process.env.WS_NO_BUFFER_UTIL": '"1"',
+      "process.env.WS_NO_UTF_8_VALIDATE": '"1"',
     },
     minify: true,
     external: externals,
