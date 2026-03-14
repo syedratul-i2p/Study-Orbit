@@ -18,6 +18,7 @@ import {
   Share2, FileUp, FileDown, Sparkles, Lock, Unlock,
   ChevronDown, ChevronRight, RefreshCw, Copy,
 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import {
   type BackupSnapshot,
   listSnapshots,
@@ -483,11 +484,32 @@ export default function SettingsPage() {
   const visibleSnapshots = showAllSnapshots ? snapshots : snapshots.slice(0, 3);
 
   return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
-      <h1 className="text-2xl font-bold" data-testid="text-settings-title">{t.settings.title}</h1>
+    <div className="app-page-narrow space-y-6">
+      <PageHeader
+        badge={
+          <>
+            <Sparkles className="h-3.5 w-3.5" />
+            Preferences
+          </>
+        }
+        icon={<Globe className="h-6 w-6 text-primary" />}
+        title={t.settings.title}
+        description="Adjust language, theme, storage, and backup controls without leaving the study workspace."
+      >
+        <div className="flex flex-wrap gap-3">
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">App language</p>
+            <p className="mt-1 text-sm font-semibold">{language === "bn" ? "Bangla" : "English"}</p>
+          </div>
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Theme</p>
+            <p className="mt-1 text-sm font-semibold capitalize">{theme}</p>
+          </div>
+        </div>
+      </PageHeader>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-        <Card className="p-5">
+        <Card className="app-surface p-5">
           <div className="flex items-center gap-3 mb-4">
             <Globe className="w-5 h-5 text-primary" />
             <h2 className="font-semibold">{t.settings.language}</h2>
@@ -507,14 +529,14 @@ export default function SettingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="bn">বাংলা</SelectItem>
+                  <SelectItem value="bn">?????</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </Card>
 
-        <Card className="p-5">
+        <Card className="app-surface p-5">
           <div className="flex items-center gap-3 mb-4">
             <Brain className="w-5 h-5 text-purple-500" />
             <h2 className="font-semibold">{t.settings.chatLanguage}</h2>
@@ -535,7 +557,7 @@ export default function SettingsPage() {
           </Select>
         </Card>
 
-        <Card className="p-5">
+        <Card className="app-surface p-5">
           <div className="flex items-center gap-3 mb-4">
             <Palette className="w-5 h-5 text-emerald-500" />
             <h2 className="font-semibold">{t.settings.theme}</h2>
@@ -560,7 +582,7 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        <Card className="p-5">
+        <Card className="app-surface p-5">
           <div className="flex items-center gap-3 mb-4">
             <Database className="w-5 h-5 text-amber-500" />
             <h2 className="font-semibold">{t.settings.dataStorage}</h2>
@@ -583,7 +605,7 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        <Card className="p-5 border-primary/20 overflow-hidden" data-testid="card-backup-section">
+        <Card className="app-surface overflow-hidden p-5" data-testid="card-backup-section">
           <div className="flex items-center gap-3 mb-1">
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20">
               <Archive className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -881,3 +903,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

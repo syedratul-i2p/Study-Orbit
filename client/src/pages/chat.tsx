@@ -9,9 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, MessageCircle, ArrowLeft, User, Loader2, Check, CheckCheck, Search } from "lucide-react";
+import { Send, MessageCircle, ArrowLeft, User, Loader2, Check, CheckCheck, Search, Sparkles } from "lucide-react";
 import { useLocation, useSearch } from "wouter";
 import { saveDirectMessages, getLocalDirectMessages, addLocalDirectMessage } from "@/lib/chatStorage";
+import { PageHeader } from "@/components/page-header";
 
 interface WSMessage {
   type: string;
@@ -211,10 +212,10 @@ export default function ChatPage() {
 
   const ConversationItem = ({ u, lastMessage, unreadCount, isSelected }: { u: any; lastMessage?: any; unreadCount?: number; isSelected: boolean }) => (
     <button
-      className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-left relative ${
+      className={`relative w-full rounded-none px-4 py-3 text-left transition-colors ${
         isSelected
           ? "bg-primary/8 dark:bg-primary/12"
-          : "hover-elevate"
+          : "hover:bg-muted/35"
       }`}
       onClick={() => navigate(`/chat?user=${u.id}`)}
       data-testid={`chat-conv-${u.id}`}
@@ -270,9 +271,33 @@ export default function ChatPage() {
   const messageGroups = groupMessages(localMessages);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] md:h-[calc(100vh-3.5rem)]">
+    <div className="app-page space-y-4">
+      <PageHeader
+        badge={
+          <>
+            <Sparkles className="h-3.5 w-3.5" />
+            Messaging
+          </>
+        }
+        icon={<MessageCircle className="h-6 w-6 text-primary" />}
+        title={t.chat.title}
+        description="Keep conversations focused, readable, and aligned with the rest of the study workspace."
+      >
+        <div className="flex flex-wrap gap-3">
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Threads</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{allConversationItems.length}</p>
+          </div>
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Selected</p>
+            <p className="mt-1 text-sm font-semibold">{selectedFriend?.fullName || "No thread"}</p>
+          </div>
+        </div>
+      </PageHeader>
+
+      <div className="app-surface flex min-h-[calc(100vh-12rem)] overflow-hidden">
       <div className={`${selectedUserId ? "hidden md:flex" : "flex"} flex-col w-full md:w-80 lg:w-96 border-r bg-background`}>
-        <div className="px-4 py-3 border-b">
+        <div className="border-b border-border/60 bg-card/60 px-4 py-4">
           <div className="flex items-center gap-2 mb-3">
             <div className="p-1.5 rounded-md bg-primary/10">
               <MessageCircle className="w-4 h-4 text-primary" />
@@ -331,11 +356,11 @@ export default function ChatPage() {
         </div>
       </div>
 
-      <div className={`${selectedUserId ? "flex" : "hidden md:flex"} flex-col flex-1 bg-background`}>
+      <div className={`${selectedUserId ? "flex" : "hidden md:flex"} flex-col flex-1 bg-background/80`}>
         {selectedUserId ? (
           <>
-            <div className="border-b">
-              <div className="flex items-center gap-3 px-4 py-3">
+            <div className="border-b border-border/60 bg-card/55">
+              <div className="flex items-center gap-3 px-4 py-3.5">
                 <Button variant="ghost" size="icon" className="md:hidden" onClick={() => navigate("/chat")} data-testid="button-back-chat">
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
@@ -365,7 +390,7 @@ export default function ChatPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto px-4 py-4">
+            <div className="flex-1 overflow-auto bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.04),transparent_30%)] px-4 py-4">
               {msgsLoading && !messages ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-3">
                   <Loader2 className="w-5 h-5 animate-spin text-primary" />
@@ -382,7 +407,7 @@ export default function ChatPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="mx-auto max-w-4xl space-y-4">
                   {messageGroups.map((group, gi) => (
                     <div key={gi}>
                       <div className="flex items-center justify-center my-4">
@@ -416,10 +441,10 @@ export default function ChatPage() {
                                 </div>
                               )}
                               <div
-                                className={`max-w-[70%] px-3.5 py-2.5 text-sm transition-colors ${
+                                className={`max-w-[70%] border px-3.5 py-2.5 text-sm shadow-sm transition-colors ${
                                   isMine
-                                    ? `bg-primary text-primary-foreground ${isLastInGroup ? "rounded-2xl rounded-br-sm" : "rounded-2xl"}`
-                                    : `bg-muted ${isLastInGroup ? "rounded-2xl rounded-bl-sm" : "rounded-2xl"}`
+                                    ? `border-primary/80 bg-primary text-primary-foreground ${isLastInGroup ? "rounded-2xl rounded-br-sm" : "rounded-2xl"}`
+                                    : `border-border/50 bg-card ${isLastInGroup ? "rounded-2xl rounded-bl-sm" : "rounded-2xl"}`
                                 }`}
                                 data-testid={`message-${msg.id || idx}`}
                               >
@@ -448,7 +473,7 @@ export default function ChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="px-4 py-3 border-t bg-background">
+            <div className="border-t border-border/60 bg-card/70 px-4 py-3 backdrop-blur-md">
               <form
                 className="flex items-center gap-2"
                 onSubmit={(e) => {
@@ -481,19 +506,20 @@ export default function ChatPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center px-6">
-              <div className="w-24 h-24 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-5">
-                <MessageCircle className="w-10 h-10 text-primary/25" />
+          <div className="flex flex-1 items-center justify-center">
+            <div className="app-empty px-6">
+              <div className="app-empty-icon">
+                <MessageCircle className="h-10 w-10 text-primary/25" />
               </div>
-              <p className="font-semibold text-lg mb-1" data-testid="text-select-chat">{t.chat.selectChat}</p>
-              <p className="text-sm text-muted-foreground/60 max-w-xs mx-auto leading-relaxed">
+              <p className="mb-1 text-lg font-semibold" data-testid="text-select-chat">{t.chat.selectChat}</p>
+              <p className="mx-auto max-w-xs text-sm leading-relaxed text-muted-foreground/60">
                 {t.chat.noConversations.split(".")[0]}
               </p>
             </div>
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

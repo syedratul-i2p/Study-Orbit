@@ -11,7 +11,8 @@ import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { User, GraduationCap, MapPin, BookOpen, Target, Loader2, Camera, Users, Clock } from "lucide-react";
+import { User, GraduationCap, MapPin, BookOpen, Target, Loader2, Camera, Users, Clock, Sparkles } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 
 export default function ProfilePage() {
   const { t } = useLanguage();
@@ -69,10 +70,27 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
+    <div className="app-page-narrow space-y-6">
+      <PageHeader
+        badge={
+          <>
+            <Sparkles className="h-3.5 w-3.5" />
+            Profile
+          </>
+        }
+        icon={<User className="h-6 w-6 text-primary" />}
+        title={t.profile.title || "Profile"}
+        description="Keep your academic identity, study details, and public presence aligned."
+      >
+        <Button onClick={handleSave} disabled={loading} data-testid="button-save-profile" className="rounded-2xl px-5">
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {t.profile.save}
+        </Button>
+      </PageHeader>
+
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <Card className="overflow-visible">
-          <div className="relative h-28 sm:h-32 bg-gradient-to-br from-primary/70 via-primary/50 to-primary/20 rounded-t-md">
+        <Card className="app-surface overflow-visible">
+          <div className="relative h-32 sm:h-36 rounded-t-[1.6rem] bg-gradient-to-br from-primary/70 via-primary/50 to-primary/20">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.3),transparent_70%)]" />
           </div>
 
@@ -107,7 +125,7 @@ export default function ProfilePage() {
               </div>
 
               {Array.isArray(friends) && (
-                <div className="flex items-center gap-1.5 pb-1">
+                <div className="app-panel flex items-center gap-1.5 pb-1">
                   <Users className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground" data-testid="text-friend-count">{friends.length} {t.profile.friendCount}</span>
                 </div>
@@ -138,7 +156,7 @@ export default function ProfilePage() {
             </div>
 
             {user?.publicStatus && (
-              <div className="mt-4 p-3 rounded-md bg-muted/50 border border-border/50">
+              <div className="mt-4 rounded-2xl border border-border/60 bg-background/70 p-4">
                 <p className="text-sm italic text-muted-foreground">{user.publicStatus}</p>
               </div>
             )}
@@ -147,7 +165,7 @@ export default function ProfilePage() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <Card className="p-5 sm:p-6">
+        <Card className="app-surface p-5 sm:p-6">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="p-1.5 rounded-md bg-primary/10">
               <User className="w-4 h-4 text-primary" />
@@ -180,7 +198,7 @@ export default function ProfilePage() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <Card className="p-5 sm:p-6">
+        <Card className="app-surface p-5 sm:p-6">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="p-1.5 rounded-md bg-primary/10">
               <GraduationCap className="w-4 h-4 text-primary" />
@@ -242,18 +260,6 @@ export default function ProfilePage() {
         </Card>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSave}
-            disabled={loading}
-            data-testid="button-save-profile"
-          >
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {t.profile.save}
-          </Button>
-        </div>
-      </motion.div>
     </div>
   );
 }

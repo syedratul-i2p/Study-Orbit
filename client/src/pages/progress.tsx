@@ -4,10 +4,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/lib/languageContext";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { BarChart3, Flame, Target, Clock, TrendingUp, Activity } from "lucide-react";
+import { BarChart3, Flame, Target, Clock, TrendingUp, Activity, Sparkles } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import type { ProgressLog, FocusSession, Subject } from "@shared/schema";
 import { format, subDays } from "date-fns";
+import { PageHeader } from "@/components/page-header";
 
 export default function ProgressPage() {
   const { t } = useLanguage();
@@ -83,18 +84,29 @@ export default function ProgressPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500/8 via-teal-500/5 to-transparent p-4 sm:p-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-            <Activity className="w-5 h-5 text-white" />
+    <div className="app-page space-y-6">
+      <PageHeader
+        badge={
+          <>
+            <Sparkles className="h-3.5 w-3.5" />
+            Analytics
+          </>
+        }
+        icon={<Activity className="h-6 w-6 text-primary" />}
+        title={t.progress.title}
+        description={`${totalSessions} total sessions tracked`}
+      >
+        <div className="flex flex-wrap gap-3">
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">This week</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{Math.round(totalMinutesWeek / 60 * 10) / 10}h</p>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold" data-testid="text-progress-title">{t.progress.title}</h1>
-            <p className="text-sm text-muted-foreground">{totalSessions} total sessions tracked</p>
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Daily average</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{avgMinutesDay}m</p>
           </div>
         </div>
-      </div>
+      </PageHeader>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((stat, i) => (
@@ -104,7 +116,7 @@ export default function ProgressPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
           >
-            <Card className="p-4 relative overflow-visible hover-elevate">
+            <Card className="app-surface p-4 relative overflow-visible hover-elevate">
               <div className="flex items-start justify-between gap-1">
                 <div>
                   <p className="text-xs text-muted-foreground font-medium leading-tight">{stat.label}</p>
@@ -130,7 +142,7 @@ export default function ProgressPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-          <Card className="overflow-visible">
+          <Card className="app-surface overflow-visible">
             <div className="p-4 sm:p-5 pb-0">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center">
@@ -165,7 +177,7 @@ export default function ProgressPage() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <Card className="overflow-visible">
+          <Card className="app-surface overflow-visible">
             <div className="p-4 sm:p-5 pb-0">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-7 h-7 rounded-md bg-emerald-500/10 flex items-center justify-center">
@@ -176,8 +188,10 @@ export default function ProgressPage() {
             </div>
             <div className="px-2 pb-4">
               {subjectDistribution.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[200px] text-sm text-muted-foreground">
-                  <Target className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                <div className="app-empty h-[200px] text-sm text-muted-foreground">
+                  <div className="app-empty-icon mb-3">
+                    <Target className="w-8 h-8 text-primary/50" />
+                  </div>
                   <p>No subject data yet</p>
                 </div>
               ) : (
@@ -207,7 +221,7 @@ export default function ProgressPage() {
       </div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-        <Card className="p-4 sm:p-5">
+        <Card className="app-surface p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-md bg-purple-500/10 flex items-center justify-center">
               <TrendingUp className="w-3.5 h-3.5 text-purple-500" />

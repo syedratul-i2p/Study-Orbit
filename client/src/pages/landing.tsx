@@ -54,8 +54,8 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      <header className="sticky top-0 z-50 border-b bg-background/60 backdrop-blur-xl">
+    <div className="min-h-screen overflow-x-hidden bg-background">
+      <header className="sticky top-0 z-50 border-b border-border/70 bg-background/70 backdrop-blur-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-blue-600 to-teal-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
@@ -77,20 +77,20 @@ export default function LandingPage() {
 
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/80 via-background to-background dark:from-indigo-950/30 dark:via-background dark:to-background" />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-br from-indigo-400/20 via-blue-400/10 to-teal-400/20 dark:from-indigo-600/10 dark:via-blue-600/5 dark:to-teal-600/10 rounded-full blur-3xl" />
-          <div className="absolute top-20 right-0 w-72 h-72 bg-gradient-to-bl from-purple-400/15 to-transparent dark:from-purple-600/8 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-teal-400/10 to-transparent dark:from-teal-600/5 rounded-full blur-3xl" />
+          <div className="absolute inset-0 bg-gradient-to-b from-indigo-50/70 via-background to-background dark:from-indigo-950/25 dark:via-background dark:to-background" />
+          <div className="absolute top-0 left-1/2 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-400/16 via-blue-400/8 to-teal-400/16 blur-3xl dark:from-indigo-600/10 dark:via-blue-600/5 dark:to-teal-600/10" />
+          <div className="absolute top-20 right-0 h-72 w-72 rounded-full bg-gradient-to-bl from-purple-400/10 to-transparent blur-3xl dark:from-purple-600/6" />
+          <div className="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-gradient-to-tr from-teal-400/8 to-transparent blur-3xl dark:from-teal-600/5" />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-20 sm:pb-32">
           <motion.div
-            className="text-center max-w-4xl mx-auto"
+            className="mx-auto max-w-4xl rounded-[2rem] border border-border/60 bg-card/65 px-6 py-10 text-center shadow-xl shadow-black/5 backdrop-blur-xl sm:px-10 sm:py-14"
             initial="hidden"
             animate="visible"
             variants={stagger}
           >
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border bg-background/80 backdrop-blur-sm text-sm font-medium text-muted-foreground mb-8 shadow-sm">
+            <motion.div variants={fadeUp} className="mb-8 inline-flex items-center gap-2 rounded-full border border-primary/10 bg-background/80 px-4 py-1.5 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-sm">
               <Sparkles className="w-4 h-4 text-indigo-500" />
               {t.landing.heroTag}
             </motion.div>
@@ -148,7 +148,7 @@ export default function LandingPage() {
               <motion.div
                 key={i}
                 variants={scaleIn}
-                className="text-center p-4 rounded-2xl bg-background/60 backdrop-blur-sm border shadow-sm"
+                className="text-center rounded-[1.5rem] border border-border/60 bg-card/70 p-4 shadow-sm backdrop-blur-md"
               >
                 <stat.icon className="w-5 h-5 text-indigo-500 mx-auto mb-2" />
                 <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400 bg-clip-text text-transparent">
@@ -161,8 +161,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="features" className="py-20 sm:py-28 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-muted/30 to-transparent" />
+      <section id="features" className="relative py-20 sm:py-28">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-muted/20 to-transparent" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-16"
@@ -192,7 +192,7 @@ export default function LandingPage() {
           >
             {features.map((feature, i) => (
               <motion.div key={i} variants={fadeUp}>
-                <Card className="group relative p-6 h-full border-transparent hover:border-primary/20 transition-all duration-300 bg-card hover:shadow-lg hover:shadow-primary/5 overflow-hidden rounded-2xl">
+                <Card className="group app-surface relative h-full overflow-hidden p-6 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
                   <div className="absolute inset-0 bg-gradient-to-br from-transparent to-transparent group-hover:from-primary/[0.02] group-hover:to-primary/[0.05] transition-all duration-300" />
                   <div className="relative">
                     <div className={`w-12 h-12 rounded-xl ${feature.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
@@ -210,7 +210,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 sm:py-28 relative">
+      <section className="relative py-20 sm:py-28">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-blue-700 dark:from-indigo-900 dark:to-blue-950" />
           <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-white/10 to-transparent rounded-full blur-3xl" />
@@ -218,7 +218,7 @@ export default function LandingPage() {
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center"
+            className="rounded-[2rem] border border-white/10 bg-white/[0.03] px-6 py-10 text-center backdrop-blur-md sm:px-10 sm:py-14"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -258,7 +258,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t py-8 bg-muted/30">
+      <footer className="border-t border-border/70 bg-muted/20 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">

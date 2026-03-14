@@ -12,9 +12,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Plus, ArrowLeft, Trash2, CheckCircle2, Circle, BookOpen, Calendar } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, CheckCircle2, Circle, BookOpen, Calendar, Sparkles, Target } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import type { Subject, Topic } from "@shared/schema";
+import { PageHeader } from "@/components/page-header";
 
 export default function SubjectDetailPage() {
   const { t } = useLanguage();
@@ -86,55 +87,48 @@ export default function SubjectDetailPage() {
   const progressPercent = topics.length > 0 ? Math.round((completedCount / topics.length) * 100) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
-      <div className="relative overflow-hidden rounded-xl p-4 sm:p-5" style={{ background: `linear-gradient(135deg, ${subject?.color || "#4F46E5"}10, transparent)` }}>
-        <div className="flex items-center gap-3">
-          <Button size="icon" variant="ghost" onClick={() => navigate("/subjects")} data-testid="button-back">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2.5">
-              {subject && (
-                <div
-                  className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${subject.color || "#4F46E5"}18` }}
-                >
-                  <BookOpen className="w-4 h-4" style={{ color: subject.color || "#4F46E5" }} />
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold truncate" data-testid="text-subject-name">
-                  {subject?.name || "..."}
-                </h1>
-                <p className="text-sm text-muted-foreground">{topics.length} {t.subjects.topics}</p>
-              </div>
-            </div>
+    <div className="app-page space-y-6">
+      <PageHeader
+        badge={
+          <>
+            <Sparkles className="h-3.5 w-3.5" />
+            Learning workspace
+          </>
+        }
+        icon={
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-2xl"
+            style={{ backgroundColor: `${subject?.color || "#4F46E5"}18` }}
+          >
+            <BookOpen className="h-6 w-6" style={{ color: subject?.color || "#4F46E5" }} />
           </div>
-          {topics.length > 0 && (
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${progressPercent}%`,
-                    backgroundColor: subject?.color || "#4F46E5",
-                  }}
-                />
-              </div>
-              <span className="text-xs text-muted-foreground font-medium tabular-nums">{progressPercent}%</span>
-            </div>
-          )}
+        }
+        title={subject?.name || "..."}
+        description={`${topics.length} ${t.subjects.topics}`}
+      >
+        <div className="flex flex-wrap gap-3">
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Completion</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{progressPercent}%</p>
+          </div>
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Finished topics</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{completedCount}</p>
+          </div>
         </div>
-      </div>
+      </PageHeader>
 
       <div className="flex items-center justify-between gap-2 flex-wrap">
+        <Button size="icon" variant="ghost" onClick={() => navigate("/subjects")} data-testid="button-back">
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-add-topic">
+            <Button className="rounded-2xl px-5" data-testid="button-add-topic">
               <Plus className="w-4 h-4 mr-1" /> {t.subjects.addTopic}
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="rounded-[1.75rem] border-border/70">
             <DialogHeader>
               <DialogTitle>{t.subjects.addTopic}</DialogTitle>
             </DialogHeader>
@@ -205,6 +199,7 @@ export default function SubjectDetailPage() {
 
         {topics.length > 0 && (
           <p className="text-sm text-muted-foreground" data-testid="text-topic-progress">
+            <Target className="mr-1 inline h-3.5 w-3.5" />
             {completedCount}/{topics.length} completed
           </p>
         )}
@@ -215,12 +210,12 @@ export default function SubjectDetailPage() {
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-18 rounded-md" />)}
         </div>
       ) : topics.length === 0 ? (
-        <Card className="p-10 text-center">
-          <div className="w-14 h-14 mx-auto mb-3 rounded-md bg-muted/50 flex items-center justify-center">
-            <BookOpen className="w-7 h-7 text-muted-foreground/50" />
+        <Card className="app-empty p-10 text-center">
+          <div className="app-empty-icon">
+            <BookOpen className="w-7 h-7 text-primary/60" />
           </div>
-          <p className="text-muted-foreground font-medium">{t.subjects.noTopics}</p>
-          <p className="text-sm text-muted-foreground/70 mt-1">Add topics to track your progress</p>
+          <p className="font-semibold text-foreground">{t.subjects.noTopics}</p>
+          <p className="mt-1 text-sm text-muted-foreground">Add topics to track your progress with clearer deadlines and status.</p>
         </Card>
       ) : (
         <div className="space-y-2">
@@ -231,7 +226,7 @@ export default function SubjectDetailPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
             >
-              <Card className="p-3 sm:p-4 overflow-visible hover-elevate" data-testid={`card-topic-${topic.id}`}>
+              <Card className="app-surface p-4 sm:p-5 overflow-visible hover-elevate" data-testid={`card-topic-${topic.id}`}>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() =>

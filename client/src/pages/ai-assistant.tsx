@@ -40,6 +40,7 @@ import {
   Check,
   GraduationCap,
 } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import {
   type ChatConversation,
   type ChatMessage,
@@ -142,8 +143,8 @@ function ChatSidebarContent({
 }) {
   return (
     <>
-      <div className="p-3 border-b space-y-3">
-        <Button className="w-full gap-2" size="sm" onClick={handleNewChat} data-testid={`button-new-chat${testIdPrefix}`}>
+      <div className="space-y-3 border-b border-border/60 bg-card/60 p-3">
+        <Button className="w-full gap-2 rounded-2xl" size="sm" onClick={handleNewChat} data-testid={`button-new-chat${testIdPrefix}`}>
           <Plus className="w-4 h-4" /> {t.ai.newChat}
         </Button>
         <div className="relative">
@@ -152,7 +153,7 @@ function ChatSidebarContent({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.ai.searchChats}
-            className="pl-8 text-sm bg-muted/50 border-transparent focus:border-border focus:bg-background transition-colors"
+            className="border-transparent bg-muted/50 pl-8 text-sm transition-colors focus:border-border focus:bg-background"
             data-testid={`input-search${testIdPrefix}`}
           />
         </div>
@@ -162,10 +163,10 @@ function ChatSidebarContent({
           {filteredChats.map((chat) => (
             <div
               key={chat.id}
-              className={`group p-2.5 rounded-md cursor-pointer text-sm transition-all ${
+              className={`group cursor-pointer rounded-2xl p-3 text-sm transition-all ${
                 activeChat?.id === chat.id
-                  ? "bg-primary/10 border border-primary/20"
-                  : "hover-elevate border border-transparent"
+                  ? "border border-primary/20 bg-primary/10"
+                  : "border border-transparent hover-elevate"
               }`}
               onClick={() => handleSelectChat(chat.id)}
               data-testid={`chat-item${testIdPrefix}-${chat.id}`}
@@ -205,10 +206,12 @@ function ChatSidebarContent({
             </div>
           ))}
           {filteredChats.length === 0 && (
-            <div className="text-center py-8">
-              <MessageSquare className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">{t.ai.noChats}</p>
+          <div className="app-empty py-8">
+            <div className="app-empty-icon mb-2">
+              <MessageSquare className="h-8 w-8 text-muted-foreground/40" />
             </div>
+            <p className="text-sm text-muted-foreground">{t.ai.noChats}</p>
+          </div>
           )}
         </div>
       </ScrollArea>
@@ -526,7 +529,31 @@ export default function AIAssistantPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] md:h-[calc(100vh-3rem)]">
+    <div className="app-page space-y-4">
+      <PageHeader
+        badge={
+          <>
+            <Sparkles className="h-3.5 w-3.5" />
+            AI workspace
+          </>
+        }
+        icon={<Brain className="h-6 w-6 text-primary" />}
+        title={t.ai.title}
+        description="A premium assistant workspace for explanations, notes, translation, and exam-ready study help."
+      >
+        <div className="flex flex-wrap gap-3">
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Saved chats</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{chats.length}</p>
+          </div>
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Subject</p>
+            <p className="mt-1 text-sm font-semibold">{subjectContext || "General"}</p>
+          </div>
+        </div>
+      </PageHeader>
+
+      <div className="app-surface flex min-h-[calc(100vh-12rem)] overflow-hidden">
       <AnimatePresence>
         {showSidebar && (
           <motion.div
@@ -535,7 +562,7 @@ export default function AIAssistantPage() {
             exit={{ x: -300, opacity: 0 }}
             className="absolute inset-0 z-40 md:relative md:z-0 flex"
           >
-            <div className="w-72 bg-card border-r flex flex-col h-full">
+            <div className="h-full w-72 border-r border-border/60 bg-background/90 backdrop-blur-md flex flex-col">
               <ChatSidebarContent {...sidebarProps} testIdPrefix="" />
             </div>
             <div className="flex-1 bg-black/20 md:hidden" onClick={() => setShowSidebar(false)} />
@@ -543,12 +570,12 @@ export default function AIAssistantPage() {
         )}
       </AnimatePresence>
 
-      <div className="hidden md:flex w-72 bg-card border-r flex-col h-full">
+      <div className="hidden h-full w-72 border-r border-border/60 bg-background/90 backdrop-blur-md md:flex md:flex-col">
         <ChatSidebarContent {...sidebarProps} testIdPrefix="-desktop" />
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b bg-card/50 backdrop-blur-sm relative z-20">
+        <div className="relative z-20 flex items-center gap-3 border-b border-border/60 bg-card/55 px-4 py-3 backdrop-blur-md">
           <Button size="icon" variant="ghost" className="md:hidden" onClick={() => setShowSidebar(true)} data-testid="button-toggle-chat-sidebar">
             <Menu className="w-4 h-4" />
           </Button>
@@ -575,7 +602,7 @@ export default function AIAssistantPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowProviderMenu(!showProviderMenu)}
-                className="gap-1.5 text-xs"
+                className="gap-1.5 rounded-2xl text-xs"
                 data-testid="button-page-provider-select"
               >
                 {selectedProvider === "auto" ? (
@@ -672,7 +699,7 @@ export default function AIAssistantPage() {
             </div>
 
             <Select value={subjectContext} onValueChange={setSubjectContext}>
-              <SelectTrigger className="w-[120px] text-xs h-8" data-testid="select-subject-context">
+              <SelectTrigger className="h-8 w-[120px] rounded-xl text-xs" data-testid="select-subject-context">
                 <SelectValue placeholder={t.ai.selectSubject} />
               </SelectTrigger>
               <SelectContent>
@@ -688,9 +715,9 @@ export default function AIAssistantPage() {
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="p-4">
+          <div className="bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.04),transparent_28%)] p-4">
             {!activeChat || activeChat.messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center min-h-[400px] text-center px-4">
+              <div className="flex min-h-[400px] flex-col items-center justify-center px-4 text-center">
                 <div className="relative mb-8">
                   <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent flex items-center justify-center border border-primary/10 shadow-lg shadow-primary/5">
                     <GraduationCap className="w-12 h-12 text-primary" />
@@ -703,13 +730,13 @@ export default function AIAssistantPage() {
                 <p className="text-sm text-muted-foreground max-w-md leading-relaxed mb-8">
                   {t.app.description}
                 </p>
-                <div className="grid grid-cols-2 gap-2 max-w-md w-full">
+                <div className="grid w-full max-w-md grid-cols-2 gap-2">
                   {quickActions.slice(0, 4).map((action) => (
                     <Button
                       key={action.key}
                       variant="outline"
                       size="sm"
-                      className="py-3 px-4 text-xs gap-2 rounded-xl h-auto justify-start hover:bg-primary/5 hover:border-primary/20 transition-all"
+                      className="h-auto justify-start gap-2 rounded-2xl px-4 py-3 text-xs transition-all hover:border-primary/20 hover:bg-primary/5"
                       onClick={() => handleQuickAction(action.key)}
                       data-testid={`button-action-${action.key}`}
                     >
@@ -722,7 +749,7 @@ export default function AIAssistantPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 max-w-3xl mx-auto">
+              <div className="mx-auto max-w-3xl space-y-4">
                 {activeChat.messages.map((msg, i) => (
                   <motion.div
                     key={i}
@@ -741,8 +768,8 @@ export default function AIAssistantPage() {
                         <div
                           className={`rounded-2xl px-4 py-3 ${
                             msg.role === "user"
-                              ? "bg-primary text-primary-foreground rounded-br-sm"
-                              : "bg-muted/80 border border-border/50 rounded-bl-sm"
+                              ? "rounded-br-sm border border-primary/80 bg-primary text-primary-foreground"
+                              : "rounded-bl-sm border border-border/50 bg-card"
                           }`}
                           data-testid={`message-${msg.role}-${i}`}
                         >
@@ -794,7 +821,7 @@ export default function AIAssistantPage() {
         </ScrollArea>
 
         {activeChat && activeChat.messages.length > 0 && (
-          <div className="px-4 py-1.5 border-t border-border/50">
+          <div className="border-t border-border/60 bg-card/50 px-4 py-2">
             <ScrollArea className="w-full">
               <div className="flex items-center gap-1.5 pb-0.5">
                 {quickActions.map((action) => (
@@ -802,7 +829,7 @@ export default function AIAssistantPage() {
                     key={action.key}
                     variant="outline"
                     size="sm"
-                    className="text-[11px] flex-shrink-0 py-1 px-2.5 gap-1 rounded-full h-auto"
+                    className="h-auto flex-shrink-0 gap-1 rounded-full px-2.5 py-1 text-[11px]"
                     onClick={() => handleQuickAction(action.key)}
                     data-testid={`button-quick-${action.key}`}
                   >
@@ -815,7 +842,7 @@ export default function AIAssistantPage() {
           </div>
         )}
 
-        <div className="p-3 border-t bg-card/80 backdrop-blur-md">
+        <div className="border-t border-border/60 bg-card/75 p-3 backdrop-blur-md">
           <div className="flex items-end gap-2 max-w-3xl mx-auto">
             <div className="flex-1 relative">
               <Textarea
@@ -829,7 +856,7 @@ export default function AIAssistantPage() {
                   }
                 }}
                 placeholder={t.ai.placeholder}
-                className="resize-none min-h-[48px] max-h-[120px] text-sm pr-12 rounded-xl bg-muted/40 border-border/50 focus:border-primary/30 focus:bg-background focus:shadow-sm transition-all"
+                className="min-h-[52px] max-h-[120px] resize-none rounded-2xl border-border/50 bg-muted/40 pr-12 text-sm transition-all focus:border-primary/30 focus:bg-background focus:shadow-sm"
                 rows={1}
                 data-testid="textarea-ai-input"
               />
@@ -837,7 +864,7 @@ export default function AIAssistantPage() {
                 size="icon"
                 onClick={handleSend}
                 disabled={!input.trim() || isLoading}
-                className="absolute right-1.5 bottom-1.5 rounded-lg h-8 w-8 shadow-sm"
+                className="absolute bottom-1.5 right-1.5 h-8 w-8 rounded-xl shadow-sm"
                 data-testid="button-send"
               >
                 {isLoading ? (
@@ -899,6 +926,7 @@ export default function AIAssistantPage() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

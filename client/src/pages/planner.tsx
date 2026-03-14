@@ -8,12 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/page-header";
 import { useLanguage } from "@/lib/languageContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Plus, Calendar, Trash2, CheckCircle2, Circle, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, Clock, ListTodo } from "lucide-react";
+import { Plus, Calendar, Trash2, CheckCircle2, Circle, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, Clock, ListTodo, Sparkles } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
 import type { PlannerItem, Subject } from "@shared/schema";
 
@@ -122,28 +123,44 @@ export default function PlannerPage() {
   const completedTasks = items.filter((i) => i.status === "completed").length;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-md bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
-            <CalendarDays className="w-5 h-5 text-white" />
+    <div className="app-page space-y-6">
+      <PageHeader
+        badge={
+          <>
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            {t.planner.title}
+          </>
+        }
+        icon={<CalendarDays className="h-5 w-5" />}
+        title={t.planner.title}
+        description={
+          totalTasks > 0
+            ? `${completedTasks}/${totalTasks} tasks completed this week`
+            : "Plan your week ahead with a calmer weekly overview and clearer task flow."
+        }
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="app-panel">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Weekly total</p>
+            <p className="mt-3 text-3xl font-semibold tracking-tight">{totalTasks}</p>
+            <p className="mt-2 text-sm text-muted-foreground">Scheduled tasks in this week view</p>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold" data-testid="text-planner-title">{t.planner.title}</h1>
-            <p className="text-sm text-muted-foreground">
-              {totalTasks > 0
-                ? `${completedTasks}/${totalTasks} tasks completed this week`
-                : "Plan your week ahead"}
-            </p>
+          <div className="app-panel">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Completion</p>
+            <p className="mt-3 text-3xl font-semibold tracking-tight">{completedTasks}<span className="ml-1 text-base font-normal text-muted-foreground">/ {totalTasks || 0}</span></p>
+            <p className="mt-2 text-sm text-muted-foreground">Completed study blocks this week</p>
           </div>
         </div>
+      </PageHeader>
+
+      <div className="flex items-center justify-end gap-4 flex-wrap">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-add-task">
+            <Button className="rounded-2xl px-5" data-testid="button-add-task">
               <Plus className="w-4 h-4 mr-1.5" /> {t.planner.addTask}
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md rounded-[1.75rem] border-border/70">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ListTodo className="w-5 h-5 text-primary" />
@@ -264,7 +281,7 @@ export default function PlannerPage() {
         </Dialog>
       </div>
 
-      <Card className="p-4 sm:p-5">
+      <Card className="app-surface p-4 sm:p-5">
         <div className="flex items-center justify-between gap-2 mb-5">
           <Button size="icon" variant="ghost" onClick={() => setCurrentDate(addDays(currentDate, -7))} data-testid="button-prev-week">
             <ChevronLeft className="w-4 h-4" />
@@ -288,10 +305,10 @@ export default function PlannerPage() {
             return (
               <div
                 key={dateStr}
-                className={`text-center p-2 sm:p-3 rounded-md min-h-[90px] transition-all ${
+                className={`text-center p-2 sm:p-3 rounded-[1.15rem] min-h-[90px] transition-all ${
                   isToday
-                    ? "bg-primary/10 ring-2 ring-primary/40 dark:ring-primary/30"
-                    : "bg-muted/40 dark:bg-muted/20"
+                    ? "bg-primary/10 ring-2 ring-primary/30"
+                    : "bg-background/70 border border-border/60"
                 }`}
                 data-testid={`day-${dateStr}`}
               >
@@ -327,8 +344,8 @@ export default function PlannerPage() {
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 rounded-md" />)}
         </div>
       ) : items.length === 0 ? (
-        <Card className="p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-md bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 flex items-center justify-center">
+        <Card className="app-surface p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 flex items-center justify-center">
             <Calendar className="w-8 h-8 text-blue-500/60 dark:text-blue-400/60" />
           </div>
           <p className="font-medium mb-1">{t.planner.noTasks}</p>
@@ -353,10 +370,10 @@ export default function PlannerPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.02 }}
                 >
-                  <Card className="overflow-visible hover-elevate" data-testid={`planner-card-${item.id}`}>
+                  <Card className="app-surface overflow-visible hover-elevate" data-testid={`planner-card-${item.id}`}>
                     <div className="flex">
                       <div
-                        className="w-1 rounded-l-md flex-shrink-0 transition-colors"
+                        className="w-1 rounded-l-[1.4rem] flex-shrink-0 transition-colors"
                         style={{ backgroundColor: subjectColor || statusConfig[status].hex }}
                       />
                       <div className="flex items-center gap-3 flex-1 p-3 sm:p-4">

@@ -12,9 +12,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Plus, BookOpen, Trash2, ChevronRight, GraduationCap, Clock } from "lucide-react";
+import { Plus, BookOpen, Trash2, ChevronRight, GraduationCap, Clock, Sparkles, Target } from "lucide-react";
 import { useLocation } from "wouter";
 import type { Subject, Topic } from "@shared/schema";
+import { PageHeader } from "@/components/page-header";
 
 const COLORS = ["#4F46E5", "#0D9488", "#D97706", "#DC2626", "#7C3AED", "#2563EB", "#059669", "#DB2777"];
 
@@ -70,26 +71,47 @@ export default function SubjectsPage() {
     }
   };
 
+  const totalWeeklyHours = subjects.reduce((sum, subject) => sum + (subject.weeklyTargetHours || 0), 0);
+
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-indigo-500/8 via-purple-500/5 to-transparent p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold" data-testid="text-subjects-title">{t.subjects.title}</h1>
-              <p className="text-sm text-muted-foreground">{subjects.length} subjects</p>
-            </div>
+    <div className="app-page space-y-6">
+      <PageHeader
+        badge={
+          <>
+            <Sparkles className="h-3.5 w-3.5" />
+            {t.subjects.title}
+          </>
+        }
+        icon={<GraduationCap className="h-6 w-6 text-primary" />}
+        title={t.subjects.title}
+        description="Organize your study areas with a clearer weekly target and priority view."
+      >
+        <div className="flex flex-wrap gap-3">
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Subjects</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{subjects.length}</p>
           </div>
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Weekly target</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{totalWeeklyHours}h</p>
+          </div>
+        </div>
+      </PageHeader>
+
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="app-section-header">
+          <div>
+            <p className="app-kicker">Overview</p>
+            <h2 className="text-lg font-semibold tracking-tight">Subject spaces</h2>
+          </div>
+        </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button data-testid="button-add-subject">
+              <Button className="rounded-2xl px-5" data-testid="button-add-subject">
                 <Plus className="w-4 h-4 mr-1" /> {t.subjects.addSubject}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="rounded-[1.75rem] border-border/70">
               <DialogHeader>
                 <DialogTitle>{t.subjects.addSubject}</DialogTitle>
               </DialogHeader>
@@ -161,7 +183,6 @@ export default function SubjectsPage() {
               </form>
             </DialogContent>
           </Dialog>
-        </div>
       </div>
 
       {isLoading ? (
@@ -171,12 +192,12 @@ export default function SubjectsPage() {
           ))}
         </div>
       ) : subjects.length === 0 ? (
-        <Card className="p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-md bg-gradient-to-br from-indigo-500/10 to-purple-500/10 dark:from-indigo-500/20 dark:to-purple-500/20 flex items-center justify-center">
-            <BookOpen className="w-8 h-8 text-indigo-500/60 dark:text-indigo-400/60" />
+        <Card className="app-empty p-12 text-center">
+          <div className="app-empty-icon">
+            <BookOpen className="w-8 h-8 text-primary/60" />
           </div>
-          <p className="text-muted-foreground font-medium mb-1">{t.subjects.noSubjects}</p>
-          <p className="text-sm text-muted-foreground/70">Add your first subject to get started</p>
+          <p className="mb-1 font-semibold text-foreground">{t.subjects.noSubjects}</p>
+          <p className="text-sm text-muted-foreground">Add your first subject to build a structured learning plan.</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -188,16 +209,16 @@ export default function SubjectsPage() {
               transition={{ delay: i * 0.05 }}
             >
               <Card
-                className="overflow-visible cursor-pointer hover-elevate"
+                className="app-surface overflow-visible cursor-pointer hover-elevate"
                 onClick={() => navigate(`/subjects/${subject.id}`)}
                 data-testid={`card-subject-${subject.id}`}
               >
-                <div className="p-4">
+                <div className="p-5">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="mb-4 flex items-center gap-3">
                         <div
-                          className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
+                          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl"
                           style={{ backgroundColor: `${subject.color || "#4F46E5"}15` }}
                         >
                           <BookOpen className="w-5 h-5" style={{ color: subject.color || "#4F46E5" }} />
@@ -213,9 +234,13 @@ export default function SubjectsPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge
                           variant="secondary"
-                          className={`text-xs ${getPriorityStyle(subject.priority)}`}
+                          className={`rounded-full px-2.5 py-1 text-xs ${getPriorityStyle(subject.priority)}`}
                         >
                           {getPriorityLabel(subject.priority)}
+                        </Badge>
+                        <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs">
+                          <Target className="mr-1 h-3 w-3" />
+                          {subject.weeklyTargetHours}h
                         </Badge>
                       </div>
                     </div>
@@ -236,7 +261,7 @@ export default function SubjectsPage() {
                   </div>
                 </div>
                 <div
-                  className="h-1 rounded-b-md"
+                  className="h-1 rounded-b-[1.4rem]"
                   style={{ backgroundColor: subject.color || "#4F46E5" }}
                 />
               </Card>

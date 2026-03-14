@@ -10,8 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { Search, UserPlus, Check, X, MessageCircle, Loader2, Users, UserCheck, Bell } from "lucide-react";
+import { Search, UserPlus, Check, X, MessageCircle, Loader2, Users, UserCheck, Bell, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
+import { PageHeader } from "@/components/page-header";
 
 export default function FriendsPage() {
   const { t } = useLanguage();
@@ -105,34 +106,35 @@ export default function FriendsPage() {
   const friendCount = (friends as any[]).length;
 
   return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
-      <div className="relative overflow-hidden rounded-md bg-gradient-to-br from-primary/10 via-primary/5 to-accent/5 p-5 sm:p-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/40 pointer-events-none" />
-        <div className="relative flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center w-11 h-11 rounded-md bg-primary/10">
-              <Users className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-friends-title">{t.friends.title}</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {friendCount > 0
-                  ? `${friendCount} ${t.profile.friendCount.toLowerCase()}`
-                  : t.friends.noFriends.split(".")[0]
-                }
-              </p>
-            </div>
+    <div className="app-page-narrow space-y-6">
+      <PageHeader
+        badge={
+          <>
+            <Sparkles className="h-3.5 w-3.5" />
+            Connections
+          </>
+        }
+        icon={<Users className="h-6 w-6 text-primary" />}
+        title={t.friends.title}
+        description={
+          friendCount > 0
+            ? `${friendCount} ${t.profile.friendCount.toLowerCase()}`
+            : t.friends.noFriends.split(".")[0]
+        }
+      >
+        <div className="flex flex-wrap gap-3">
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Friends</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{friendCount}</p>
           </div>
-          {pendingCount > 0 && (
-            <Badge variant="default" data-testid="badge-pending-count">
-              <Bell className="w-3 h-3 mr-1.5" />
-              {pendingCount} {t.friends.pending.toLowerCase()}
-            </Badge>
-          )}
+          <div className="app-panel min-w-[8.5rem]">
+            <p className="text-xs font-medium text-muted-foreground">Pending</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{pendingCount}</p>
+          </div>
         </div>
-      </div>
+      </PageHeader>
 
-      <Card className="p-4">
+      <Card className="app-surface p-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -161,7 +163,7 @@ export default function FriendsPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.04 }}
-                className="flex items-center justify-between gap-3 flex-wrap rounded-md p-3 hover-elevate"
+                className="app-surface-subtle flex items-center justify-between gap-3 flex-wrap rounded-2xl p-3 hover-elevate"
               >
                 <div className="flex items-center gap-3">
                   <UserAvatar u={u} />
@@ -211,7 +213,7 @@ export default function FriendsPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
-                <Card className="p-4" data-testid={`card-pending-${req.friendshipId}`}>
+                <Card className="app-surface p-4" data-testid={`card-pending-${req.friendshipId}`}>
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3">
                       <div className="relative">
@@ -254,11 +256,11 @@ export default function FriendsPage() {
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : friendCount === 0 ? (
-          <Card className="p-10 text-center">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted/50 mx-auto mb-4">
-              <Users className="w-7 h-7 text-muted-foreground/60" />
+          <Card className="app-empty p-10 text-center">
+            <div className="app-empty-icon">
+              <Users className="w-7 h-7 text-primary/60" />
             </div>
-            <p className="text-muted-foreground font-medium mb-1" data-testid="text-no-friends">{t.friends.noFriends}</p>
+            <p className="mb-1 font-semibold text-foreground" data-testid="text-no-friends">{t.friends.noFriends}</p>
             <p className="text-xs text-muted-foreground/60 max-w-xs mx-auto">{t.friends.search}</p>
           </Card>
         ) : (
@@ -270,7 +272,7 @@ export default function FriendsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03 }}
               >
-                <Card className="p-4 hover-elevate" data-testid={`card-friend-${friend.id}`}>
+                <Card className="app-surface p-4 hover-elevate" data-testid={`card-friend-${friend.id}`}>
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3">
                       <div className="relative">

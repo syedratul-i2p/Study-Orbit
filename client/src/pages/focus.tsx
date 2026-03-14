@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Play, Pause, RotateCcw, Timer, Clock, Zap, Star, Crosshair, BookOpen } from "lucide-react";
 import type { Subject } from "@shared/schema";
+import { PageHeader } from "@/components/page-header";
 
 const PRESETS = {
   pomodoro: { work: 25, break: 5 },
@@ -146,18 +147,31 @@ export default function FocusPage() {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-md bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center flex-shrink-0">
-          <Crosshair className="w-5 h-5 text-white" />
+    <div className="app-page-narrow space-y-6">
+      <PageHeader
+        badge={
+          <>
+            <Star className="h-3.5 w-3.5 text-primary" />
+            {t.focus.title}
+          </>
+        }
+        icon={<Crosshair className="h-5 w-5" />}
+        title={t.focus.title}
+        description={isBreak ? t.focus.breakTime : isRunning ? t.focus.focusNow : "Select a mode to begin a calmer, high-focus study session."}
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="app-panel">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Current mode</p>
+            <p className="mt-3 text-2xl font-semibold tracking-tight">{mode === "deepWork" ? "Deep Work" : mode}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{isBreak ? "Break cycle active" : "Work session ready"}</p>
+          </div>
+          <div className="app-panel">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Session length</p>
+            <p className="mt-3 text-2xl font-semibold tracking-tight">{getWorkMinutes()}<span className="ml-1 text-base font-normal text-muted-foreground">min</span></p>
+            <p className="mt-2 text-sm text-muted-foreground">{getBreakMinutes()} minute break rhythm</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold" data-testid="text-focus-title">{t.focus.title}</h1>
-          <p className="text-sm text-muted-foreground">
-            {isBreak ? t.focus.breakTime : isRunning ? t.focus.focusNow : "Select a mode to begin"}
-          </p>
-        </div>
-      </div>
+      </PageHeader>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {modeOptions.map((m) => {
@@ -188,7 +202,7 @@ export default function FocusPage() {
       </div>
 
       {mode === "custom" && (
-        <Card className="p-4">
+        <Card className="app-surface p-4">
           <div className="flex items-center gap-3">
             <Label className="text-sm font-medium whitespace-nowrap">{t.focus.minutes}:</Label>
             <Input
@@ -208,7 +222,7 @@ export default function FocusPage() {
         </Card>
       )}
 
-      <Card className="p-8 sm:p-10">
+      <Card className="app-surface p-8 sm:p-10">
         <div className="flex flex-col items-center">
           <div className="relative w-60 h-60 sm:w-72 sm:h-72">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 240 240">
@@ -275,17 +289,17 @@ export default function FocusPage() {
 
           <div className="flex items-center gap-3 mt-8">
             {!isRunning ? (
-              <Button size="lg" onClick={start} data-testid="button-start">
+              <Button size="lg" className="rounded-2xl px-6" onClick={start} data-testid="button-start">
                 <Play className="w-4 h-4 mr-2" />
                 {timeLeft === (isBreak ? getBreakMinutes() * 60 : getWorkMinutes() * 60) ? t.focus.start : t.focus.resume}
               </Button>
             ) : (
-              <Button size="lg" variant="secondary" onClick={pause} data-testid="button-pause">
+              <Button size="lg" variant="secondary" className="rounded-2xl px-6" onClick={pause} data-testid="button-pause">
                 <Pause className="w-4 h-4 mr-2" />
                 {t.focus.pause}
               </Button>
             )}
-            <Button size="icon" variant="ghost" onClick={reset} data-testid="button-reset">
+            <Button size="icon" variant="ghost" className="rounded-2xl" onClick={reset} data-testid="button-reset">
               <RotateCcw className="w-4 h-4" />
             </Button>
           </div>
@@ -293,7 +307,7 @@ export default function FocusPage() {
       </Card>
 
       {subjects.length > 0 && (
-        <Card className="p-4">
+        <Card className="app-surface p-4">
           <div className="flex items-center gap-2 mb-2.5">
             <BookOpen className="w-4 h-4 text-muted-foreground" />
             <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{t.ai.subjectContext}</Label>
@@ -314,7 +328,7 @@ export default function FocusPage() {
       )}
 
       <Dialog open={sessionComplete} onOpenChange={setSessionComplete}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md rounded-[1.75rem] border-border/70">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-md bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
