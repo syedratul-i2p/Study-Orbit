@@ -202,7 +202,7 @@ export default function ChatPage() {
     for (const msg of msgs) {
       const msgDate = msg.createdAt
         ? new Date(msg.createdAt).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" })
-        : "Today";
+        : t.chat.today;
       if (msgDate !== currentDate) {
         currentDate = msgDate;
         groups.push({ date: msgDate, messages: [] });
@@ -309,7 +309,7 @@ export default function ChatPage() {
             <Input
               value={sidebarSearch}
               onChange={(e) => setSidebarSearch(e.target.value)}
-              placeholder={t.friends.search}
+              placeholder={t.chat.searchPlaceholder}
               className="pl-9 bg-muted/50 border-transparent focus-visible:border-border focus-visible:ring-primary/20"
               data-testid="input-chat-search"
             />

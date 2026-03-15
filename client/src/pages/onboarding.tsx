@@ -20,7 +20,7 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     institution: "",
-    country: "Bangladesh",
+    country: t.onboarding.defaultCountry,
     appLanguage: "bn",
     chatLanguage: "auto",
     classLevel: "",
@@ -33,6 +33,42 @@ export default function OnboardingPage() {
   });
 
   const stepHelperText = [t.onboarding.guidedSetup, t.onboarding.subtitle];
+  const classOptions = [
+    { value: "class-9", label: t.onboarding.classOptions.class9 },
+    { value: "class-10", label: t.onboarding.classOptions.class10 },
+    { value: "class-11", label: t.onboarding.classOptions.class11 },
+    { value: "class-12", label: t.onboarding.classOptions.class12 },
+    { value: "diploma", label: t.onboarding.classOptions.diploma },
+    { value: "undergraduate", label: t.onboarding.classOptions.undergraduate },
+    { value: "graduate", label: t.onboarding.classOptions.graduate },
+    { value: "ielts", label: t.onboarding.classOptions.ielts },
+    { value: "sat", label: t.onboarding.classOptions.sat },
+    { value: "competitive", label: t.onboarding.classOptions.competitive },
+  ];
+  const departmentOptions = [
+    { value: "science", label: t.onboarding.departmentOptions.science },
+    { value: "arts", label: t.onboarding.departmentOptions.arts },
+    { value: "commerce", label: t.onboarding.departmentOptions.commerce },
+    { value: "engineering", label: t.onboarding.departmentOptions.engineering },
+    { value: "medical", label: t.onboarding.departmentOptions.medical },
+    { value: "cse", label: t.onboarding.departmentOptions.cse },
+    { value: "other", label: t.onboarding.departmentOptions.other },
+  ];
+  const boardOptions = [
+    { value: "dhaka", label: t.onboarding.boardOptions.dhaka },
+    { value: "rajshahi", label: t.onboarding.boardOptions.rajshahi },
+    { value: "chittagong", label: t.onboarding.boardOptions.chittagong },
+    { value: "comilla", label: t.onboarding.boardOptions.comilla },
+    { value: "sylhet", label: t.onboarding.boardOptions.sylhet },
+    { value: "dinajpur", label: t.onboarding.boardOptions.dinajpur },
+    { value: "jessore", label: t.onboarding.boardOptions.jessore },
+    { value: "barishal", label: t.onboarding.boardOptions.barishal },
+    { value: "madrasah", label: t.onboarding.boardOptions.madrasah },
+    { value: "technical", label: t.onboarding.boardOptions.technical },
+    { value: "national-university", label: t.onboarding.boardOptions.nationalUniversity },
+    { value: "cambridge", label: t.onboarding.boardOptions.cambridge },
+    { value: "other", label: t.onboarding.boardOptions.other },
+  ];
 
   const steps = [
     {
@@ -102,16 +138,9 @@ export default function OnboardingPage() {
                 <SelectValue placeholder={t.common.select} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="class-9">Class 9</SelectItem>
-                <SelectItem value="class-10">Class 10 (SSC)</SelectItem>
-                <SelectItem value="class-11">Class 11 (HSC 1st Year)</SelectItem>
-                <SelectItem value="class-12">Class 12 (HSC 2nd Year)</SelectItem>
-                <SelectItem value="diploma">Diploma</SelectItem>
-                <SelectItem value="undergraduate">Undergraduate</SelectItem>
-                <SelectItem value="graduate">Graduate</SelectItem>
-                <SelectItem value="ielts">IELTS Preparation</SelectItem>
-                <SelectItem value="sat">SAT Preparation</SelectItem>
-                <SelectItem value="competitive">Competitive Exam</SelectItem>
+                {classOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -122,13 +151,9 @@ export default function OnboardingPage() {
                 <SelectValue placeholder={t.common.select} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="science">Science</SelectItem>
-                <SelectItem value="arts">Arts / Humanities</SelectItem>
-                <SelectItem value="commerce">Commerce / Business</SelectItem>
-                <SelectItem value="engineering">Engineering</SelectItem>
-                <SelectItem value="medical">Medical</SelectItem>
-                <SelectItem value="cse">CSE / IT</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                {departmentOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -139,19 +164,9 @@ export default function OnboardingPage() {
                 <SelectValue placeholder={t.common.select} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="dhaka">Dhaka Board</SelectItem>
-                <SelectItem value="rajshahi">Rajshahi Board</SelectItem>
-                <SelectItem value="chittagong">Chittagong Board</SelectItem>
-                <SelectItem value="comilla">Comilla Board</SelectItem>
-                <SelectItem value="sylhet">Sylhet Board</SelectItem>
-                <SelectItem value="dinajpur">Dinajpur Board</SelectItem>
-                <SelectItem value="jessore">Jessore Board</SelectItem>
-                <SelectItem value="barishal">Barishal Board</SelectItem>
-                <SelectItem value="madrasah">Madrasah Board</SelectItem>
-                <SelectItem value="technical">Technical Board</SelectItem>
-                <SelectItem value="national-university">National University</SelectItem>
-                <SelectItem value="cambridge">Cambridge / Edexcel</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                {boardOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
