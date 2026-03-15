@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { User, GraduationCap, MapPin, BookOpen, Target, Loader2, Camera, Users, Clock, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { SectionShell } from "@/components/section-shell";
 
 export default function ProfilePage() {
   const { t } = useLanguage();
@@ -75,12 +76,12 @@ export default function ProfilePage() {
         badge={
           <>
             <Sparkles className="h-3.5 w-3.5" />
-            Profile
+            {t.profile.title}
           </>
         }
         icon={<User className="h-6 w-6 text-primary" />}
         title={t.profile.title || "Profile"}
-        description="Keep your academic identity, study details, and public presence aligned."
+        description={t.profile.pageDescription}
       >
         <Button onClick={handleSave} disabled={loading} data-testid="button-save-profile" className="rounded-2xl px-5">
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -165,13 +166,11 @@ export default function ProfilePage() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <Card className="app-surface p-5 sm:p-6">
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="p-1.5 rounded-md bg-primary/10">
-              <User className="w-4 h-4 text-primary" />
-            </div>
-            <h3 className="font-semibold" data-testid="text-section-personal">Personal Information</h3>
-          </div>
+        <SectionShell
+          icon={<User className="w-4 h-4 text-primary" />}
+          title={<span data-testid="text-section-personal">{t.profile.personalInformation}</span>}
+          className="sm:p-6"
+        >
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -194,24 +193,22 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-        </Card>
+        </SectionShell>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <Card className="app-surface p-5 sm:p-6">
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="p-1.5 rounded-md bg-primary/10">
-              <GraduationCap className="w-4 h-4 text-primary" />
-            </div>
-            <h3 className="font-semibold" data-testid="text-section-academic">Academic Information</h3>
-          </div>
+        <SectionShell
+          icon={<GraduationCap className="w-4 h-4 text-primary" />}
+          title={<span data-testid="text-section-academic">{t.profile.academicInformation}</span>}
+          className="sm:p-6"
+        >
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-sm">{t.onboarding.classLevel}</Label>
                 <Select value={form.classLevel} onValueChange={(v) => setForm({ ...form, classLevel: v })}>
                   <SelectTrigger data-testid="select-profile-class">
-                    <SelectValue placeholder="Select..." />
+                    <SelectValue placeholder={t.common.select} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="class-9">Class 9</SelectItem>
@@ -228,7 +225,7 @@ export default function ProfilePage() {
                 <Label className="text-sm">{t.onboarding.department}</Label>
                 <Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}>
                   <SelectTrigger data-testid="select-profile-dept">
-                    <SelectValue placeholder="Select..." />
+                    <SelectValue placeholder={t.common.select} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="science">Science</SelectItem>
@@ -257,7 +254,7 @@ export default function ProfilePage() {
               />
             </div>
           </div>
-        </Card>
+        </SectionShell>
       </motion.div>
 
     </div>

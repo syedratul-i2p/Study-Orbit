@@ -17,6 +17,8 @@ import { motion } from "framer-motion";
 import { Plus, Calendar, Trash2, CheckCircle2, Circle, AlertCircle, ChevronLeft, ChevronRight, CalendarDays, Clock, ListTodo, Sparkles } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek } from "date-fns";
 import type { PlannerItem, Subject } from "@shared/schema";
+import { SummaryPanel } from "@/components/summary-panel";
+import { EmptyState } from "@/components/empty-state";
 
 export default function PlannerPage() {
   const { t } = useLanguage();
@@ -68,7 +70,7 @@ export default function PlannerPage() {
         type: "reading",
         subjectId: "",
       });
-      toast({ title: t.planner.addTask, description: "Task added successfully" });
+      toast({ title: t.planner.addTask, description: t.planner.taskAddedSuccess });
     },
   });
 
@@ -87,7 +89,7 @@ export default function PlannerPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/planner"] });
-      toast({ title: "Task deleted" });
+      toast({ title: t.planner.taskDeletedSuccess });
     },
   });
 
@@ -135,21 +137,18 @@ export default function PlannerPage() {
         title={t.planner.title}
         description={
           totalTasks > 0
-            ? `${completedTasks}/${totalTasks} tasks completed this week`
-            : "Plan your week ahead with a calmer weekly overview and clearer task flow."
+            ? `${completedTasks}/${totalTasks} ${t.planner.completedBlocksLabel}`
+            : t.planner.noTasks
         }
       >
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="app-panel">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Weekly total</p>
-            <p className="mt-3 text-3xl font-semibold tracking-tight">{totalTasks}</p>
-            <p className="mt-2 text-sm text-muted-foreground">Scheduled tasks in this week view</p>
-          </div>
-          <div className="app-panel">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Completion</p>
-            <p className="mt-3 text-3xl font-semibold tracking-tight">{completedTasks}<span className="ml-1 text-base font-normal text-muted-foreground">/ {totalTasks || 0}</span></p>
-            <p className="mt-2 text-sm text-muted-foreground">Completed study blocks this week</p>
-          </div>
+          <SummaryPanel label={t.planner.weeklyTotal} value={totalTasks} hint={t.planner.scheduledTasksLabel} />
+          <SummaryPanel
+            label={t.planner.completionLabel}
+            value={<>{completedTasks}<span className="ml-1 text-base font-normal text-muted-foreground">/ {totalTasks || 0}</span></>}
+            hint={t.planner.completedBlocksLabel}
+            valueClassName="mt-3 text-3xl font-semibold tracking-tight"
+          />
         </div>
       </PageHeader>
 
@@ -187,7 +186,7 @@ export default function PlannerPage() {
                 <Input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="What do you need to do?"
+                  placeholder={t.planner.titlePlaceholder}
                   required
                   data-testid="input-task-title"
                 />
@@ -197,7 +196,7 @@ export default function PlannerPage() {
                 <Textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Add details (optional)"
+                  placeholder={t.planner.descriptionPlaceholder}
                   className="resize-none"
                   rows={2}
                   data-testid="input-task-desc"
@@ -274,7 +273,7 @@ export default function PlannerPage() {
                 </div>
               )}
               <Button type="submit" className="w-full" disabled={createMutation.isPending} data-testid="button-submit-task">
-                {createMutation.isPending ? "Adding..." : t.planner.addTask}
+                {createMutation.isPending ? t.common.loading : t.planner.addTask}
               </Button>
             </form>
           </DialogContent>
@@ -344,13 +343,12 @@ export default function PlannerPage() {
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 rounded-md" />)}
         </div>
       ) : items.length === 0 ? (
-        <Card className="app-surface p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 flex items-center justify-center">
-            <Calendar className="w-8 h-8 text-blue-500/60 dark:text-blue-400/60" />
-          </div>
-          <p className="font-medium mb-1">{t.planner.noTasks}</p>
-          <p className="text-sm text-muted-foreground">Add a task to start planning your week</p>
-        </Card>
+        <EmptyState
+          className="p-12"
+          icon={<Calendar className="w-8 h-8 text-blue-500/60 dark:text-blue-400/60" />}
+          title={t.planner.noTasks}
+          description={t.planner.scheduledTasksLabel}
+        />
       ) : (
         <div className="space-y-2">
           {items

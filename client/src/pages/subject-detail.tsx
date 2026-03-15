@@ -16,6 +16,8 @@ import { Plus, ArrowLeft, Trash2, CheckCircle2, Circle, BookOpen, Calendar, Spar
 import { useLocation, useParams } from "wouter";
 import type { Subject, Topic } from "@shared/schema";
 import { PageHeader } from "@/components/page-header";
+import { SummaryPanel } from "@/components/summary-panel";
+import { EmptyState } from "@/components/empty-state";
 
 export default function SubjectDetailPage() {
   const { t } = useLanguage();
@@ -92,7 +94,7 @@ export default function SubjectDetailPage() {
         badge={
           <>
             <Sparkles className="h-3.5 w-3.5" />
-            Learning workspace
+            {t.subjects.learningWorkspace}
           </>
         }
         icon={
@@ -107,14 +109,8 @@ export default function SubjectDetailPage() {
         description={`${topics.length} ${t.subjects.topics}`}
       >
         <div className="flex flex-wrap gap-3">
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Completion</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{progressPercent}%</p>
-          </div>
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Finished topics</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{completedCount}</p>
-          </div>
+          <SummaryPanel label={t.subjects.completionLabel} value={`${progressPercent}%`} />
+          <SummaryPanel label={t.subjects.finishedTopicsLabel} value={completedCount} />
         </div>
       </PageHeader>
 
@@ -145,12 +141,12 @@ export default function SubjectDetailPage() {
               className="space-y-4"
             >
               <div className="space-y-1.5">
-                <Label>Topic Name</Label>
+                <Label>{t.subjects.topicNameLabel}</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   required
-                  placeholder="e.g. Quadratic Equations"
+                  placeholder={t.subjects.topicNamePlaceholder}
                   data-testid="input-topic-name"
                 />
               </div>
@@ -172,7 +168,7 @@ export default function SubjectDetailPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Deadline</Label>
+                  <Label>{t.subjects.deadline}</Label>
                   <Input
                     type="date"
                     value={form.deadline}
@@ -181,7 +177,7 @@ export default function SubjectDetailPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Revision Date</Label>
+                  <Label>{t.subjects.revisionDate}</Label>
                   <Input
                     type="date"
                     value={form.revisionDate}
@@ -200,7 +196,7 @@ export default function SubjectDetailPage() {
         {topics.length > 0 && (
           <p className="text-sm text-muted-foreground" data-testid="text-topic-progress">
             <Target className="mr-1 inline h-3.5 w-3.5" />
-            {completedCount}/{topics.length} completed
+            {completedCount}/{topics.length} {t.subjects.completedSummary}
           </p>
         )}
       </div>
@@ -210,13 +206,12 @@ export default function SubjectDetailPage() {
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-18 rounded-md" />)}
         </div>
       ) : topics.length === 0 ? (
-        <Card className="app-empty p-10 text-center">
-          <div className="app-empty-icon">
-            <BookOpen className="w-7 h-7 text-primary/60" />
-          </div>
-          <p className="font-semibold text-foreground">{t.subjects.noTopics}</p>
-          <p className="mt-1 text-sm text-muted-foreground">Add topics to track your progress with clearer deadlines and status.</p>
-        </Card>
+        <EmptyState
+          className="p-10"
+          icon={<BookOpen className="w-7 h-7 text-primary/60" />}
+          title={t.subjects.noTopics}
+          description={t.subjects.noTopicsDescription}
+        />
       ) : (
         <div className="space-y-2">
           {topics.map((topic, i) => (

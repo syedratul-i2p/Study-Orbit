@@ -32,6 +32,8 @@ export default function OnboardingPage() {
     dailyStudyHours: 4,
   });
 
+  const stepHelperText = [t.onboarding.guidedSetup, t.onboarding.subtitle];
+
   const steps = [
     {
       title: t.onboarding.title,
@@ -50,8 +52,8 @@ export default function OnboardingPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="bn">বাংলা</SelectItem>
+                <SelectItem value="en">{t.settings.english}</SelectItem>
+                <SelectItem value="bn">{t.settings.bangla}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -82,7 +84,7 @@ export default function OnboardingPage() {
             <Input
               value={form.institution}
               onChange={(e) => setForm({ ...form, institution: e.target.value })}
-              placeholder="e.g., Dhaka College"
+              placeholder={t.onboarding.institutionPlaceholder}
               data-testid="input-institution"
             />
           </div>
@@ -97,7 +99,7 @@ export default function OnboardingPage() {
             <Label>{t.onboarding.classLevel}</Label>
             <Select value={form.classLevel} onValueChange={(v) => setForm({ ...form, classLevel: v })}>
               <SelectTrigger data-testid="select-class-level">
-                <SelectValue placeholder="Select..." />
+                <SelectValue placeholder={t.common.select} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="class-9">Class 9</SelectItem>
@@ -117,7 +119,7 @@ export default function OnboardingPage() {
             <Label>{t.onboarding.department}</Label>
             <Select value={form.department} onValueChange={(v) => setForm({ ...form, department: v })}>
               <SelectTrigger data-testid="select-department">
-                <SelectValue placeholder="Select..." />
+                <SelectValue placeholder={t.common.select} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="science">Science</SelectItem>
@@ -134,7 +136,7 @@ export default function OnboardingPage() {
             <Label>{t.onboarding.board}</Label>
             <Select value={form.board} onValueChange={(v) => setForm({ ...form, board: v })}>
               <SelectTrigger data-testid="select-board">
-                <SelectValue placeholder="Select..." />
+                <SelectValue placeholder={t.common.select} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="dhaka">Dhaka Board</SelectItem>
@@ -165,7 +167,7 @@ export default function OnboardingPage() {
                 className="w-20"
                 data-testid="input-daily-hours"
               />
-              <span className="text-sm text-muted-foreground">hours/day</span>
+              <span className="text-sm text-muted-foreground">{t.onboarding.hoursPerDay}</span>
             </div>
           </div>
         </div>
@@ -177,7 +179,7 @@ export default function OnboardingPage() {
     setLoading(true);
     try {
       await completeOnboarding(form);
-      toast({ title: t.common.success, description: "Profile set up successfully!" });
+      toast({ title: t.common.success, description: t.onboarding.setupSuccess });
       setTimeout(() => navigate("/dashboard"), 100);
     } catch (error: any) {
       toast({ title: t.common.error, description: error.message, variant: "destructive" });
@@ -198,7 +200,7 @@ export default function OnboardingPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
-                Guided setup
+                {t.onboarding.guidedSetup}
               </div>
               <div className="mt-6 flex items-center gap-3">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 shadow-lg shadow-indigo-500/20">
@@ -206,17 +208,13 @@ export default function OnboardingPage() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold tracking-tight">{t.app.name}</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">A calmer study setup for academic focus and bilingual support.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{t.onboarding.introTitle}</p>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
-              {[
-                "Set your preferred app and chat language",
-                "Capture class, board, and study details",
-                "Start with a layout tailored to your learning routine",
-              ].map((item) => (
+              {[t.onboarding.benefitLanguage, t.onboarding.benefitAcademic, t.onboarding.benefitRoutine].map((item) => (
                 <div key={item} className="app-panel flex items-start gap-3">
                   <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
                     <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -233,13 +231,17 @@ export default function OnboardingPage() {
                 <GraduationCap className="h-7 w-7 text-white" />
               </div>
               <h1 className="text-2xl font-bold">{t.app.name}</h1>
+              <p className="mt-2 text-sm text-muted-foreground">{t.onboarding.introTitle}</p>
             </div>
 
             <Card className="app-surface p-6 sm:p-7">
               <div className="mb-6 flex items-center justify-between gap-4">
                 <div>
-                  <p className="app-kicker">Step {step + 1} of {steps.length}</p>
+                  <p className="app-kicker">
+                    {t.onboarding.stepLabel} {step + 1} / {steps.length}
+                  </p>
                   <h2 className="mt-2 text-xl font-semibold tracking-tight">{steps[step].title}</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">{stepHelperText[step]}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {steps.map((_, i) => (

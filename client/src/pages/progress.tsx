@@ -9,6 +9,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Toolti
 import type { ProgressLog, FocusSession, Subject } from "@shared/schema";
 import { format, subDays } from "date-fns";
 import { PageHeader } from "@/components/page-header";
+import { SummaryPanel } from "@/components/summary-panel";
+import { EmptyState } from "@/components/empty-state";
 
 export default function ProgressPage() {
   const { t } = useLanguage();
@@ -89,22 +91,16 @@ export default function ProgressPage() {
         badge={
           <>
             <Sparkles className="h-3.5 w-3.5" />
-            Analytics
+            {t.progress.analytics}
           </>
         }
         icon={<Activity className="h-6 w-6 text-primary" />}
         title={t.progress.title}
-        description={`${totalSessions} total sessions tracked`}
+        description={`${totalSessions} ${t.progress.totalSessions.toLowerCase()}`}
       >
         <div className="flex flex-wrap gap-3">
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">This week</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{Math.round(totalMinutesWeek / 60 * 10) / 10}h</p>
-          </div>
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Daily average</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{avgMinutesDay}m</p>
-          </div>
+          <SummaryPanel label={t.progress.thisWeek} value={`${Math.round(totalMinutesWeek / 60 * 10) / 10}h`} />
+          <SummaryPanel label={t.progress.dailyAverage} value={`${avgMinutesDay}m`} />
         </div>
       </PageHeader>
 
@@ -188,12 +184,12 @@ export default function ProgressPage() {
             </div>
             <div className="px-2 pb-4">
               {subjectDistribution.length === 0 ? (
-                <div className="app-empty h-[200px] text-sm text-muted-foreground">
-                  <div className="app-empty-icon mb-3">
-                    <Target className="w-8 h-8 text-primary/50" />
-                  </div>
-                  <p>No subject data yet</p>
-                </div>
+                <EmptyState
+                  compact
+                  className="h-[200px] border-0 bg-transparent text-sm shadow-none"
+                  icon={<Target className="w-8 h-8 text-primary/50" />}
+                  title={t.progress.noSubjectData}
+                />
               ) : (
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
@@ -230,9 +226,9 @@ export default function ProgressPage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { value: avgMinutesDay, label: "Avg min/day", gradient: "from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20" },
+              { value: avgMinutesDay, label: t.progress.averageMinutesPerDay, gradient: "from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20" },
               { value: totalSessions, label: t.progress.totalSessions, gradient: "from-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:to-teal-500/20" },
-              { value: `${Math.round(totalMinutesWeek / 60 * 10) / 10}h`, label: "This week", gradient: "from-orange-500/10 to-amber-500/10 dark:from-orange-500/20 dark:to-amber-500/20" },
+              { value: `${Math.round(totalMinutesWeek / 60 * 10) / 10}h`, label: t.progress.thisWeek, gradient: "from-orange-500/10 to-amber-500/10 dark:from-orange-500/20 dark:to-amber-500/20" },
               { value: focusScore, label: t.progress.focusScore, gradient: "from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20" },
             ].map((item, i) => (
               <motion.div

@@ -16,6 +16,8 @@ import { Plus, BookOpen, Trash2, ChevronRight, GraduationCap, Clock, Sparkles, T
 import { useLocation } from "wouter";
 import type { Subject, Topic } from "@shared/schema";
 import { PageHeader } from "@/components/page-header";
+import { SummaryPanel } from "@/components/summary-panel";
+import { EmptyState } from "@/components/empty-state";
 
 const COLORS = ["#4F46E5", "#0D9488", "#D97706", "#DC2626", "#7C3AED", "#2563EB", "#059669", "#DB2777"];
 
@@ -84,25 +86,19 @@ export default function SubjectsPage() {
         }
         icon={<GraduationCap className="h-6 w-6 text-primary" />}
         title={t.subjects.title}
-        description="Organize your study areas with a clearer weekly target and priority view."
+        description={t.subjects.pageDescription}
       >
         <div className="flex flex-wrap gap-3">
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Subjects</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{subjects.length}</p>
-          </div>
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Weekly target</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{totalWeeklyHours}h</p>
-          </div>
+          <SummaryPanel label={t.subjects.countLabel} value={subjects.length} />
+          <SummaryPanel label={t.subjects.weeklyTargetLabel} value={`${totalWeeklyHours}h`} />
         </div>
       </PageHeader>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="app-section-header">
+          <div className="app-section-header">
           <div>
-            <p className="app-kicker">Overview</p>
-            <h2 className="text-lg font-semibold tracking-tight">Subject spaces</h2>
+            <p className="app-kicker">{t.subjects.overview}</p>
+            <h2 className="text-lg font-semibold tracking-tight">{t.subjects.spacesTitle}</h2>
           </div>
         </div>
           <Dialog open={open} onOpenChange={setOpen}>
@@ -128,7 +124,7 @@ export default function SubjectsPage() {
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     required
-                    placeholder="e.g. Mathematics"
+                    placeholder={t.subjects.placeholderExample}
                     data-testid="input-subject-name"
                   />
                 </div>
@@ -161,7 +157,7 @@ export default function SubjectsPage() {
                       className="w-24"
                       data-testid="input-weekly-target"
                     />
-                    <span className="text-sm text-muted-foreground">hours/week</span>
+                    <span className="text-sm text-muted-foreground">{t.subjects.perWeek}</span>
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -192,13 +188,12 @@ export default function SubjectsPage() {
           ))}
         </div>
       ) : subjects.length === 0 ? (
-        <Card className="app-empty p-12 text-center">
-          <div className="app-empty-icon">
-            <BookOpen className="w-8 h-8 text-primary/60" />
-          </div>
-          <p className="mb-1 font-semibold text-foreground">{t.subjects.noSubjects}</p>
-          <p className="text-sm text-muted-foreground">Add your first subject to build a structured learning plan.</p>
-        </Card>
+        <EmptyState
+          className="p-12"
+          icon={<BookOpen className="w-8 h-8 text-primary/60" />}
+          title={t.subjects.noSubjects}
+          description={t.subjects.emptyDescription}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {subjects.map((subject, i) => (
@@ -227,7 +222,7 @@ export default function SubjectsPage() {
                           <p className="font-semibold truncate text-base">{subject.name}</p>
                           <div className="flex items-center gap-1 mt-0.5">
                             <Clock className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">{subject.weeklyTargetHours}h/week</span>
+                            <span className="text-xs text-muted-foreground">{subject.weeklyTargetHours}{t.subjects.perWeek}</span>
                           </div>
                         </div>
                       </div>

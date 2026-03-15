@@ -41,6 +41,8 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { SummaryPanel } from "@/components/summary-panel";
+import { EmptyState } from "@/components/empty-state";
 import {
   type ChatConversation,
   type ChatMessage,
@@ -77,6 +79,7 @@ const providerColors: Record<string, string> = {
 };
 
 function CopyButton({ text }: { text: string }) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     try {
@@ -108,7 +111,7 @@ function CopyButton({ text }: { text: string }) {
             {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
           </button>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="text-xs">Copy</TooltipContent>
+        <TooltipContent side="bottom" className="text-xs">{t.ai.copy}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -206,12 +209,12 @@ function ChatSidebarContent({
             </div>
           ))}
           {filteredChats.length === 0 && (
-          <div className="app-empty py-8">
-            <div className="app-empty-icon mb-2">
-              <MessageSquare className="h-8 w-8 text-muted-foreground/40" />
-            </div>
-            <p className="text-sm text-muted-foreground">{t.ai.noChats}</p>
-          </div>
+          <EmptyState
+            compact
+            className="border-0 bg-transparent py-8 shadow-none"
+            icon={<MessageSquare className="h-8 w-8 text-muted-foreground/40" />}
+            title={t.ai.noChats}
+          />
           )}
         </div>
       </ScrollArea>
@@ -373,11 +376,11 @@ export default function AIAssistantPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || "Failed to get response");
+          throw new Error(err.message || t.ai.responseFailed);
       }
 
       const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response stream");
+      if (!reader) throw new Error(t.ai.responseStreamMissing);
 
       const decoder = new TextDecoder();
       let buffer = "";
@@ -424,7 +427,7 @@ export default function AIAssistantPage() {
     } catch (error: any) {
       toast({
         title: t.common.error,
-        description: error.message || "Failed to get response",
+        description: error.message || t.ai.responseFailed,
         variant: "destructive",
       });
     } finally {
@@ -534,22 +537,20 @@ export default function AIAssistantPage() {
         badge={
           <>
             <Sparkles className="h-3.5 w-3.5" />
-            AI workspace
+            {t.ai.workspaceBadge}
           </>
         }
         icon={<Brain className="h-6 w-6 text-primary" />}
         title={t.ai.title}
-        description="A premium assistant workspace for explanations, notes, translation, and exam-ready study help."
+        description={t.ai.workspaceDescription}
       >
         <div className="flex flex-wrap gap-3">
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Saved chats</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{chats.length}</p>
-          </div>
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Subject</p>
-            <p className="mt-1 text-sm font-semibold">{subjectContext || "General"}</p>
-          </div>
+          <SummaryPanel label={t.ai.savedChats} value={chats.length} />
+          <SummaryPanel
+            label={t.ai.subjectLabel}
+            value={subjectContext || t.ai.general}
+            valueClassName="mt-1 text-sm font-semibold"
+          />
         </div>
       </PageHeader>
 
@@ -632,7 +633,7 @@ export default function AIAssistantPage() {
                     className="absolute right-0 top-full mt-1.5 z-50 bg-popover border rounded-md shadow-lg py-1.5 min-w-[260px]"
                   >
                     <div className="px-3 py-1.5 mb-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">AI Provider</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{t.ai.providerLabel}</p>
                     </div>
                     <button
                       className={`w-full flex items-start gap-3 px-3 py-2.5 text-xs transition-colors hover:bg-muted ${
@@ -703,7 +704,7 @@ export default function AIAssistantPage() {
                 <SelectValue placeholder={t.ai.selectSubject} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="general">{t.ai.general}</SelectItem>
                 {subjects.map((s) => (
                   <SelectItem key={s.id} value={s.name}>
                     {s.name}
@@ -717,36 +718,32 @@ export default function AIAssistantPage() {
         <ScrollArea className="flex-1">
           <div className="bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.04),transparent_28%)] p-4">
             {!activeChat || activeChat.messages.length === 0 ? (
-              <div className="flex min-h-[400px] flex-col items-center justify-center px-4 text-center">
-                <div className="relative mb-8">
-                  <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent flex items-center justify-center border border-primary/10 shadow-lg shadow-primary/5">
-                    <GraduationCap className="w-12 h-12 text-primary" />
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-md">
-                    <Sparkles className="w-4 h-4 text-white" />
-                  </div>
-                </div>
-                <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">{t.ai.title}</h2>
-                <p className="text-sm text-muted-foreground max-w-md leading-relaxed mb-8">
-                  {t.app.description}
-                </p>
-                <div className="grid w-full max-w-md grid-cols-2 gap-2">
-                  {quickActions.slice(0, 4).map((action) => (
-                    <Button
-                      key={action.key}
-                      variant="outline"
-                      size="sm"
-                      className="h-auto justify-start gap-2 rounded-2xl px-4 py-3 text-xs transition-all hover:border-primary/20 hover:bg-primary/5"
-                      onClick={() => handleQuickAction(action.key)}
-                      data-testid={`button-action-${action.key}`}
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <action.icon className="w-3.5 h-3.5 text-primary" />
-                      </div>
-                      <span className="text-left">{action.label}</span>
-                    </Button>
-                  ))}
-                </div>
+              <div className="flex min-h-[400px] items-center justify-center px-4">
+                <EmptyState
+                  className="w-full max-w-2xl border-0 bg-transparent shadow-none"
+                  icon={<GraduationCap className="w-12 h-12 text-primary" />}
+                  title={t.ai.title}
+                  description={t.ai.workspaceDescription}
+                  action={
+                    <div className="grid w-full max-w-md grid-cols-2 gap-2">
+                      {quickActions.slice(0, 4).map((action) => (
+                        <Button
+                          key={action.key}
+                          variant="outline"
+                          size="sm"
+                          className="h-auto justify-start gap-2 rounded-2xl px-4 py-3 text-xs transition-all hover:border-primary/20 hover:bg-primary/5"
+                          onClick={() => handleQuickAction(action.key)}
+                          data-testid={`button-action-${action.key}`}
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <action.icon className="w-3.5 h-3.5 text-primary" />
+                          </div>
+                          <span className="text-left">{action.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  }
+                />
               </div>
             ) : (
               <div className="mx-auto max-w-3xl space-y-4">
@@ -889,7 +886,7 @@ export default function AIAssistantPage() {
                 type="password"
                 value={encKey}
                 onChange={(e) => setEncKey(e.target.value)}
-                placeholder="Encryption key..."
+                    placeholder={t.ai.exportKeyPlaceholder}
                 data-testid="input-export-key"
               />
             </div>
@@ -910,13 +907,13 @@ export default function AIAssistantPage() {
               type="password"
               value={encKey}
               onChange={(e) => setEncKey(e.target.value)}
-              placeholder="Encryption key..."
+                    placeholder={t.ai.importKeyPlaceholder}
               data-testid="input-import-key"
             />
             <Textarea
               value={importData}
               onChange={(e) => setImportData(e.target.value)}
-              placeholder="Paste encrypted data..."
+                    placeholder={t.ai.importDataPlaceholder}
               className="min-h-[100px]"
               data-testid="textarea-import-data"
             />

@@ -15,6 +15,7 @@ import { motion } from "framer-motion";
 import { Play, Pause, RotateCcw, Timer, Clock, Zap, Star, Crosshair, BookOpen } from "lucide-react";
 import type { Subject } from "@shared/schema";
 import { PageHeader } from "@/components/page-header";
+import { SummaryPanel } from "@/components/summary-panel";
 
 const PRESETS = {
   pomodoro: { work: 25, break: 5 },
@@ -142,7 +143,7 @@ export default function FocusPage() {
   const modeOptions = [
     { key: "pomodoro" as const, label: t.focus.pomodoro, icon: Timer, desc: "25 / 5 min" },
     { key: "deepWork" as const, label: t.focus.deepWork, icon: Clock, desc: "50 / 10 min" },
-    { key: "marathon" as const, label: "Marathon", icon: Zap, desc: "90 / 15 min" },
+    { key: "marathon" as const, label: t.focus.marathon, icon: Zap, desc: "90 / 15 min" },
     { key: "custom" as const, label: t.focus.custom, icon: Star, desc: `${customMinutes} min` },
   ];
 
@@ -157,19 +158,21 @@ export default function FocusPage() {
         }
         icon={<Crosshair className="h-5 w-5" />}
         title={t.focus.title}
-        description={isBreak ? t.focus.breakTime : isRunning ? t.focus.focusNow : "Select a mode to begin a calmer, high-focus study session."}
+        description={isBreak ? t.focus.breakTime : isRunning ? t.focus.focusNow : t.focus.readyDescription}
       >
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="app-panel">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Current mode</p>
-            <p className="mt-3 text-2xl font-semibold tracking-tight">{mode === "deepWork" ? "Deep Work" : mode}</p>
-            <p className="mt-2 text-sm text-muted-foreground">{isBreak ? "Break cycle active" : "Work session ready"}</p>
-          </div>
-          <div className="app-panel">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Session length</p>
-            <p className="mt-3 text-2xl font-semibold tracking-tight">{getWorkMinutes()}<span className="ml-1 text-base font-normal text-muted-foreground">min</span></p>
-            <p className="mt-2 text-sm text-muted-foreground">{getBreakMinutes()} minute break rhythm</p>
-          </div>
+          <SummaryPanel
+            label={t.focus.currentMode}
+            value={mode === "deepWork" ? t.focus.deepWork : mode === "marathon" ? t.focus.marathon : mode === "custom" ? t.focus.custom : t.focus.pomodoro}
+            hint={isBreak ? t.focus.breakActive : t.focus.workReady}
+            valueClassName="mt-3 text-2xl font-semibold tracking-tight"
+          />
+          <SummaryPanel
+            label={t.focus.sessionLengthLabel}
+            value={<>{getWorkMinutes()}<span className="ml-1 text-base font-normal text-muted-foreground">min</span></>}
+            hint={`${getBreakMinutes()} ${t.focus.breakRhythm}`}
+            valueClassName="mt-3 text-2xl font-semibold tracking-tight"
+          />
         </div>
       </PageHeader>
 

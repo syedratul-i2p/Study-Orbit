@@ -13,6 +13,8 @@ import { motion } from "framer-motion";
 import { Search, UserPlus, Check, X, MessageCircle, Loader2, Users, UserCheck, Bell, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { PageHeader } from "@/components/page-header";
+import { SummaryPanel } from "@/components/summary-panel";
+import { EmptyState } from "@/components/empty-state";
 
 export default function FriendsPage() {
   const { t } = useLanguage();
@@ -111,7 +113,7 @@ export default function FriendsPage() {
         badge={
           <>
             <Sparkles className="h-3.5 w-3.5" />
-            Connections
+            {t.friends.connections}
           </>
         }
         icon={<Users className="h-6 w-6 text-primary" />}
@@ -121,16 +123,10 @@ export default function FriendsPage() {
             ? `${friendCount} ${t.profile.friendCount.toLowerCase()}`
             : t.friends.noFriends.split(".")[0]
         }
-      >
+        >
         <div className="flex flex-wrap gap-3">
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Friends</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{friendCount}</p>
-          </div>
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Pending</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{pendingCount}</p>
-          </div>
+          <SummaryPanel label={t.friends.friendsLabel} value={friendCount} />
+          <SummaryPanel label={t.friends.pendingLabel} value={pendingCount} />
         </div>
       </PageHeader>
 
@@ -190,9 +186,12 @@ export default function FriendsPage() {
         )}
 
         {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
-          <div className="py-6 text-center">
-            <p className="text-sm text-muted-foreground" data-testid="text-no-search-results">{"No users found"}</p>
-          </div>
+          <EmptyState
+            compact
+            className="border-0 bg-transparent py-6 shadow-none"
+            icon={<Search className="w-6 h-6 text-muted-foreground/40" />}
+            title={<span data-testid="text-no-search-results">{t.common.noResults}</span>}
+          />
         )}
       </Card>
 

@@ -19,6 +19,8 @@ import {
   ChevronDown, ChevronRight, RefreshCw, Copy,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { SummaryPanel } from "@/components/summary-panel";
+import { SectionShell } from "@/components/section-shell";
 import {
   type BackupSnapshot,
   listSnapshots,
@@ -489,31 +491,33 @@ export default function SettingsPage() {
         badge={
           <>
             <Sparkles className="h-3.5 w-3.5" />
-            Preferences
+            {t.settings.preferences}
           </>
         }
         icon={<Globe className="h-6 w-6 text-primary" />}
         title={t.settings.title}
-        description="Adjust language, theme, storage, and backup controls without leaving the study workspace."
+        description={t.settings.pageDescription}
       >
         <div className="flex flex-wrap gap-3">
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">App language</p>
-            <p className="mt-1 text-sm font-semibold">{language === "bn" ? "Bangla" : "English"}</p>
-          </div>
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Theme</p>
-            <p className="mt-1 text-sm font-semibold capitalize">{theme}</p>
-          </div>
+          <SummaryPanel
+            label={t.settings.appLanguageLabel}
+            value={language === "bn" ? t.settings.bangla : t.settings.english}
+            valueClassName="mt-1 text-sm font-semibold"
+          />
+          <SummaryPanel
+            label={t.settings.theme}
+            value={theme === "dark" ? t.settings.dark : t.settings.light}
+            valueClassName="mt-1 text-sm font-semibold"
+          />
         </div>
       </PageHeader>
 
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-        <Card className="app-surface p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <Globe className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold">{t.settings.language}</h2>
-          </div>
+        <SectionShell
+          icon={<Globe className="w-5 h-5 text-primary" />}
+          title={t.settings.language}
+          description={t.settings.pageDescription}
+        >
           <div className="space-y-3">
             <div>
               <Label className="text-sm text-muted-foreground">{t.onboarding.appLanguage}</Label>
@@ -528,19 +532,18 @@ export default function SettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="bn">?????</SelectItem>
+                  <SelectItem value="en">{t.settings.english}</SelectItem>
+                  <SelectItem value="bn">{t.settings.bangla}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-        </Card>
+        </SectionShell>
 
-        <Card className="app-surface p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <Brain className="w-5 h-5 text-purple-500" />
-            <h2 className="font-semibold">{t.settings.chatLanguage}</h2>
-          </div>
+        <SectionShell
+          icon={<Brain className="w-5 h-5 text-purple-500" />}
+          title={t.settings.chatLanguage}
+        >
           <Select
             value={user?.chatLanguage || "auto"}
             onValueChange={(v) => updateProfile({ chatLanguage: v } as any)}
@@ -555,13 +558,12 @@ export default function SettingsPage() {
               <SelectItem value="bilingual">{t.settings.bilingual}</SelectItem>
             </SelectContent>
           </Select>
-        </Card>
+        </SectionShell>
 
-        <Card className="app-surface p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <Palette className="w-5 h-5 text-emerald-500" />
-            <h2 className="font-semibold">{t.settings.theme}</h2>
-          </div>
+        <SectionShell
+          icon={<Palette className="w-5 h-5 text-emerald-500" />}
+          title={t.settings.theme}
+        >
           <div className="flex gap-2">
             <Button
               variant={theme === "light" ? "default" : "secondary"}
@@ -580,13 +582,12 @@ export default function SettingsPage() {
               {t.settings.dark}
             </Button>
           </div>
-        </Card>
+        </SectionShell>
 
-        <Card className="app-surface p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <Database className="w-5 h-5 text-amber-500" />
-            <h2 className="font-semibold">{t.settings.dataStorage}</h2>
-          </div>
+        <SectionShell
+          icon={<Database className="w-5 h-5 text-amber-500" />}
+          title={t.settings.dataStorage}
+        >
           <div className="space-y-3">
             <div className="flex items-start gap-3 p-3 rounded-md bg-muted/50">
               <HardDrive className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
@@ -603,7 +604,7 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </Card>
+        </SectionShell>
 
         <Card className="app-surface overflow-hidden p-5" data-testid="card-backup-section">
           <div className="flex items-center gap-3 mb-1">

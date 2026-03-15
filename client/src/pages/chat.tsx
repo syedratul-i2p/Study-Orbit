@@ -13,6 +13,8 @@ import { Send, MessageCircle, ArrowLeft, User, Loader2, Check, CheckCheck, Searc
 import { useLocation, useSearch } from "wouter";
 import { saveDirectMessages, getLocalDirectMessages, addLocalDirectMessage } from "@/lib/chatStorage";
 import { PageHeader } from "@/components/page-header";
+import { SummaryPanel } from "@/components/summary-panel";
+import { EmptyState } from "@/components/empty-state";
 
 interface WSMessage {
   type: string;
@@ -166,10 +168,10 @@ export default function ChatPage() {
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1) return t.chat.justNow;
+    if (diffMins < 60) return `${diffMins}${t.chat.minutesAgoSuffix}`;
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24) return `${diffHours}${t.chat.hoursAgoSuffix}`;
     return d.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
@@ -276,22 +278,20 @@ export default function ChatPage() {
         badge={
           <>
             <Sparkles className="h-3.5 w-3.5" />
-            Messaging
+            {t.chat.messaging}
           </>
         }
         icon={<MessageCircle className="h-6 w-6 text-primary" />}
         title={t.chat.title}
-        description="Keep conversations focused, readable, and aligned with the rest of the study workspace."
+        description={t.chat.pageDescription}
       >
         <div className="flex flex-wrap gap-3">
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Threads</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{allConversationItems.length}</p>
-          </div>
-          <div className="app-panel min-w-[8.5rem]">
-            <p className="text-xs font-medium text-muted-foreground">Selected</p>
-            <p className="mt-1 text-sm font-semibold">{selectedFriend?.fullName || "No thread"}</p>
-          </div>
+          <SummaryPanel label={t.chat.threads} value={allConversationItems.length} />
+          <SummaryPanel
+            label={t.chat.selectedLabel}
+            value={selectedFriend?.fullName || t.chat.noThread}
+            valueClassName="mt-1 text-sm font-semibold"
+          />
         </div>
       </PageHeader>
 
@@ -309,7 +309,7 @@ export default function ChatPage() {
             <Input
               value={sidebarSearch}
               onChange={(e) => setSidebarSearch(e.target.value)}
-              placeholder={t.friends?.search || "Search conversations..."}
+              placeholder={t.friends.search}
               className="pl-9 bg-muted/50 border-transparent focus-visible:border-border focus-visible:ring-primary/20"
               data-testid="input-chat-search"
             />
@@ -322,24 +322,20 @@ export default function ChatPage() {
               <p className="text-xs text-muted-foreground">{t.common.loading}</p>
             </div>
           ) : filteredItems.length === 0 && !sidebarSearch ? (
-            <div className="flex flex-col items-center justify-center py-16 px-6">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <MessageCircle className="w-7 h-7 text-primary/60" />
-              </div>
-              <p className="text-sm font-medium mb-1" data-testid="text-no-conversations">
-                {t.chat.noConversations}
-              </p>
-              <p className="text-xs text-muted-foreground/60 text-center">
-                Add friends to start chatting
-              </p>
-            </div>
+            <EmptyState
+              compact
+              className="border-0 bg-transparent px-6 py-16 shadow-none"
+              icon={<MessageCircle className="w-7 h-7 text-primary/60" />}
+              title={<span data-testid="text-no-conversations">{t.chat.noConversations}</span>}
+              description={t.chat.addFriendsPrompt}
+            />
           ) : filteredItems.length === 0 && sidebarSearch ? (
-            <div className="flex flex-col items-center justify-center py-16 px-6">
-              <Search className="w-8 h-8 text-muted-foreground/30 mb-3" />
-              <p className="text-sm text-muted-foreground text-center">
-                No conversations found
-              </p>
-            </div>
+            <EmptyState
+              compact
+              className="border-0 bg-transparent px-6 py-16 shadow-none"
+              icon={<Search className="w-8 h-8 text-muted-foreground/30" />}
+              title={t.chat.searchEmpty}
+            />
           ) : (
             <div className="py-1">
               {filteredItems.map((item) => (
@@ -397,15 +393,13 @@ export default function ChatPage() {
                   <p className="text-xs text-muted-foreground">{t.common.loading}</p>
                 </div>
               ) : localMessages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mb-4">
-                    <MessageCircle className="w-8 h-8 text-primary/30" />
-                  </div>
-                  <p className="text-sm font-medium mb-1" data-testid="text-no-messages">{t.chat.noMessages}</p>
-                  <p className="text-xs text-muted-foreground/60">
-                    {selectedFriend?.fullName ? `Start a conversation with ${selectedFriend.fullName}` : ""}
-                  </p>
-                </div>
+                <EmptyState
+                  compact
+                  className="border-0 bg-transparent py-16 shadow-none"
+                  icon={<MessageCircle className="w-8 h-8 text-primary/30" />}
+                  title={<span data-testid="text-no-messages">{t.chat.noMessages}</span>}
+                  description={selectedFriend?.fullName ? `${t.chat.startConversationWith} ${selectedFriend.fullName}` : ""}
+                />
               ) : (
                 <div className="mx-auto max-w-4xl space-y-4">
                   {messageGroups.map((group, gi) => (
@@ -507,15 +501,12 @@ export default function ChatPage() {
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center">
-            <div className="app-empty px-6">
-              <div className="app-empty-icon">
-                <MessageCircle className="h-10 w-10 text-primary/25" />
-              </div>
-              <p className="mb-1 text-lg font-semibold" data-testid="text-select-chat">{t.chat.selectChat}</p>
-              <p className="mx-auto max-w-xs text-sm leading-relaxed text-muted-foreground/60">
-                {t.chat.noConversations.split(".")[0]}
-              </p>
-            </div>
+            <EmptyState
+              className="border-0 bg-transparent px-6 shadow-none"
+              icon={<MessageCircle className="h-10 w-10 text-primary/25" />}
+              title={<span data-testid="text-select-chat">{t.chat.selectChat}</span>}
+              description={t.chat.addFriendsPrompt}
+            />
           </div>
         )}
       </div>
