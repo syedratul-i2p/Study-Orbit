@@ -441,13 +441,13 @@ export default function AIAssistantPage() {
       .pop()?.content;
 
     const starterPrompts: Record<string, string> = {
-      explainSimply: "Explain quantum physics in simple terms",
-      shortAnswer: "What is photosynthesis? Give a short exam-ready answer",
-      examAnswer: "Write a detailed exam-style answer about Newton's laws of motion",
-      makeMCQ: "Create 5 MCQ questions with answers about World War II",
-      makeNotes: "Create concise revision notes on the water cycle",
-      translateBn: "Translate the following to Bangla: Hello, how are you?",
-      translateEn: "Translate the following to English: আমি ভালো আছি",
+      explainSimply: t.ai.starterPrompts.explainSimply,
+      shortAnswer: t.ai.starterPrompts.shortAnswer,
+      examAnswer: t.ai.starterPrompts.examAnswer,
+      makeMCQ: t.ai.starterPrompts.makeMCQ,
+      makeNotes: t.ai.starterPrompts.makeNotes,
+      translateBn: t.ai.starterPrompts.translateBn,
+      translateEn: t.ai.starterPrompts.translateEn,
     };
 
     if (!lastUserMsg) {
@@ -456,14 +456,14 @@ export default function AIAssistantPage() {
     }
 
     const prompts: Record<string, string> = {
-      explainSimply: `Explain this simply: ${lastUserMsg}`,
-      shortAnswer: `Give a short exam-ready answer: ${lastUserMsg}`,
-      examAnswer: `Write a detailed exam-style answer: ${lastUserMsg}`,
-      makeMCQ: `Create 5 MCQ questions with answers from: ${lastUserMsg}`,
-      makeQuiz: `Create a quiz with mixed question types from: ${lastUserMsg}`,
-      makeNotes: `Create concise revision notes from: ${lastUserMsg}`,
-      translateBn: `Translate the previous response to Bangla`,
-      translateEn: `Translate the previous response to English`,
+      explainSimply: t.ai.promptTemplates.explainSimply.replace("{content}", lastUserMsg),
+      shortAnswer: t.ai.promptTemplates.shortAnswer.replace("{content}", lastUserMsg),
+      examAnswer: t.ai.promptTemplates.examAnswer.replace("{content}", lastUserMsg),
+      makeMCQ: t.ai.promptTemplates.makeMCQ.replace("{content}", lastUserMsg),
+      makeQuiz: t.ai.promptTemplates.makeQuiz.replace("{content}", lastUserMsg),
+      makeNotes: t.ai.promptTemplates.makeNotes.replace("{content}", lastUserMsg),
+      translateBn: t.ai.promptTemplates.translateBn,
+      translateEn: t.ai.promptTemplates.translateEn,
     };
 
     setInput(prompts[action] || "");
@@ -493,7 +493,7 @@ export default function AIAssistantPage() {
       const count = await importChats(importData, encKey);
       await loadChats();
       setImportOpen(false);
-      toast({ title: t.common.success, description: `Imported ${count} chats` });
+      toast({ title: t.common.success, description: t.ai.importedChats.replace("{count}", String(count)) });
     } catch (error: any) {
       toast({ title: t.common.error, description: error.message, variant: "destructive" });
     }
@@ -891,7 +891,7 @@ export default function AIAssistantPage() {
               />
             </div>
             <Button className="w-full gap-2" onClick={handleExport} data-testid="button-do-export">
-              <Download className="w-4 h-4" /> Export
+              <Download className="w-4 h-4" /> {t.ai.exportAction}
             </Button>
           </div>
         </DialogContent>
@@ -918,7 +918,7 @@ export default function AIAssistantPage() {
               data-testid="textarea-import-data"
             />
             <Button className="w-full gap-2" onClick={handleImport} data-testid="button-do-import">
-              <Upload className="w-4 h-4" /> Import
+              <Upload className="w-4 h-4" /> {t.ai.importAction}
             </Button>
           </div>
         </DialogContent>

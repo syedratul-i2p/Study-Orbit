@@ -34,6 +34,23 @@ export default function ProfilePage() {
   });
 
   const { data: friends } = useQuery({ queryKey: ["/api/friends"] });
+  const classOptions = [
+    { value: "class-9", label: t.onboarding.classOptions.class9 },
+    { value: "class-10", label: t.onboarding.classOptions.class10 },
+    { value: "class-11", label: t.onboarding.classOptions.class11 },
+    { value: "class-12", label: t.onboarding.classOptions.class12 },
+    { value: "diploma", label: t.onboarding.classOptions.diploma },
+    { value: "undergraduate", label: t.onboarding.classOptions.undergraduate },
+    { value: "graduate", label: t.onboarding.classOptions.graduate },
+  ];
+  const departmentOptions = [
+    { value: "science", label: t.onboarding.departmentOptions.science },
+    { value: "arts", label: t.onboarding.departmentOptions.arts },
+    { value: "commerce", label: t.onboarding.departmentOptions.commerce },
+    { value: "engineering", label: t.onboarding.departmentOptions.engineering },
+    { value: "medical", label: t.onboarding.departmentOptions.medical },
+    { value: "cse", label: t.onboarding.departmentOptions.cse },
+  ];
 
   const getInitials = (name: string) => {
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
@@ -47,7 +64,7 @@ export default function ProfilePage() {
       const formData = new FormData();
       formData.append("avatar", file);
       const res = await fetch("/api/user/avatar", { method: "POST", body: formData, credentials: "include" });
-      if (!res.ok) throw new Error("Upload failed");
+      if (!res.ok) throw new Error(t.profile.uploadFailed);
       const updated = await res.json();
       await updateProfile({ profilePicture: updated.profilePicture } as any);
       toast({ title: t.common.success });
@@ -80,7 +97,7 @@ export default function ProfilePage() {
           </>
         }
         icon={<User className="h-6 w-6 text-primary" />}
-        title={t.profile.title || "Profile"}
+        title={t.profile.title}
         description={t.profile.pageDescription}
       >
         <Button onClick={handleSave} disabled={loading} data-testid="button-save-profile" className="rounded-2xl px-5">
@@ -211,13 +228,9 @@ export default function ProfilePage() {
                     <SelectValue placeholder={t.common.select} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="class-9">Class 9</SelectItem>
-                    <SelectItem value="class-10">Class 10 (SSC)</SelectItem>
-                    <SelectItem value="class-11">Class 11 (HSC 1st Year)</SelectItem>
-                    <SelectItem value="class-12">Class 12 (HSC 2nd Year)</SelectItem>
-                    <SelectItem value="diploma">Diploma</SelectItem>
-                    <SelectItem value="undergraduate">Undergraduate</SelectItem>
-                    <SelectItem value="graduate">Graduate</SelectItem>
+                    {classOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -228,12 +241,9 @@ export default function ProfilePage() {
                     <SelectValue placeholder={t.common.select} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="science">Science</SelectItem>
-                    <SelectItem value="arts">Arts / Humanities</SelectItem>
-                    <SelectItem value="commerce">Commerce / Business</SelectItem>
-                    <SelectItem value="engineering">Engineering</SelectItem>
-                    <SelectItem value="medical">Medical</SelectItem>
-                    <SelectItem value="cse">CSE / IT</SelectItem>
+                    {departmentOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

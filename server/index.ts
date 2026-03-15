@@ -1,7 +1,9 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { pool } from "./db";
 
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required");
@@ -25,6 +27,29 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+async function respondHealth(_req: Request, res: Response) {
+  try {
+    await pool.query("select 1");
+    return res.status(200).json({
+      status: "ok",
+      db: "ok",
+      uptime: Math.round(process.uptime()),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Health check failed:", error);
+    return res.status(503).json({
+      status: "degraded",
+      db: "error",
+      uptime: Math.round(process.uptime()),
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
+app.get("/health", respondHealth);
+app.get("/api/health", respondHealth);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

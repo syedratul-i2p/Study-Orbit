@@ -69,7 +69,7 @@ export default function DashboardPage() {
     queryKey: ["/api/planner", { from: today, to: today }],
     queryFn: async () => {
       const res = await fetch(`/api/planner?from=${today}&to=${today}`);
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) throw new Error(t.common.error);
       return res.json();
     },
   });
@@ -149,7 +149,7 @@ export default function DashboardPage() {
       icon: Clock,
       label: t.dashboard.minutesToday,
       value: todayProgress?.totalMinutes || 0,
-      suffix: "min",
+      suffix: t.common.minutesShort,
       gradient: "from-blue-500 to-indigo-500",
       accent: "bg-blue-500/10 text-blue-600 dark:text-blue-300",
     },
@@ -229,12 +229,18 @@ export default function DashboardPage() {
             <div className="rounded-[1.5rem] border border-border/70 bg-background/70 p-4 shadow-sm">
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">{t.dashboard.todaysPlan}</p>
               <p className="mt-3 text-3xl font-semibold tracking-tight">{completedPlans}<span className="ml-1 text-base font-normal text-muted-foreground">/ {totalPlans || 0}</span></p>
-              <p className="mt-2 text-sm text-muted-foreground">{totalPlans > 0 ? `${completedPlans} completed today` : t.dashboard.noPlansToday}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {totalPlans > 0
+                  ? t.dashboard.completedToday.replace("{count}", String(completedPlans))
+                  : t.dashboard.noPlansToday}
+              </p>
             </div>
             <div className="rounded-[1.5rem] border border-border/70 bg-background/70 p-4 shadow-sm">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Focus pulse</p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight">{todayProgress?.totalMinutes || 0}<span className="ml-1 text-base font-normal text-muted-foreground">min</span></p>
-              <p className="mt-2 text-sm text-muted-foreground">{todaySessions.length} sessions logged today</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">{t.dashboard.focusPulse}</p>
+              <p className="mt-3 text-3xl font-semibold tracking-tight">{todayProgress?.totalMinutes || 0}<span className="ml-1 text-base font-normal text-muted-foreground">{t.common.minutesShort}</span></p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t.dashboard.sessionsLoggedToday.replace("{count}", String(todaySessions.length))}
+              </p>
             </div>
           </div>
         </div>
@@ -275,7 +281,13 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <h2 className="text-lg font-semibold">{t.dashboard.todaysPlan}</h2>
-                      <p className="text-sm text-muted-foreground">{totalPlans > 0 ? `${completedPlans}/${totalPlans} scheduled tasks` : "Your schedule for today"}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {totalPlans > 0
+                          ? t.dashboard.scheduledTasks
+                              .replace("{completed}", String(completedPlans))
+                              .replace("{total}", String(totalPlans))
+                          : t.dashboard.scheduleToday}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -297,7 +309,7 @@ export default function DashboardPage() {
                       <Calendar className="h-7 w-7 text-muted-foreground/50" />
                     </div>
                     <p className="text-sm font-semibold text-foreground">{t.dashboard.noPlansToday}</p>
-                    <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">Plan your day to stay on track and turn big goals into smaller study blocks.</p>
+                    <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{t.dashboard.scheduleToday}</p>
                     <Button size="sm" variant="outline" className="mt-5 rounded-2xl" onClick={() => navigate("/planner")} data-testid="button-add-plan-empty">
                       <Plus className="mr-2 h-4 w-4" />
                       {t.planner.addTask}
@@ -331,7 +343,7 @@ export default function DashboardPage() {
                     ))}
                     {todayPlans.length > 5 && (
                       <Button size="sm" variant="ghost" className="w-full rounded-2xl text-xs text-muted-foreground" onClick={() => navigate("/planner")} data-testid="button-view-all-plans">
-                        +{todayPlans.length - 5} more
+                        {t.dashboard.morePlans.replace("{count}", String(todayPlans.length - 5))}
                       </Button>
                     )}
                   </div>
@@ -363,7 +375,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold">{t.dashboard.askAI}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">English & বাংলা</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{t.dashboard.bilingualSupport}</p>
                   </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground" />
                 </div>
@@ -381,7 +393,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-semibold">{t.dashboard.quickNote}</h3>
-                  <p className="text-sm text-muted-foreground">Capture thoughts before they slip away.</p>
+                  <p className="text-sm text-muted-foreground">{t.dashboard.quickNoteDescription}</p>
                 </div>
               </div>
             </div>
@@ -403,7 +415,7 @@ export default function DashboardPage() {
                   {noteSaved ? (
                     <motion.div key="saved" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-1 text-emerald-500">
                       <Check className="h-3.5 w-3.5" />
-                      <span className="text-xs font-semibold">Saved</span>
+                      <span className="text-xs font-semibold">{t.dashboard.saved}</span>
                     </motion.div>
                   ) : (
                     <motion.div key="save-btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -415,7 +427,7 @@ export default function DashboardPage() {
                               transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
                               className="inline-block h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent"
                             />
-                            Saving...
+                            {t.dashboard.saving}
                           </span>
                         ) : (
                           t.common.save

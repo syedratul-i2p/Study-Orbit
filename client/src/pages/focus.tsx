@@ -140,11 +140,27 @@ export default function FocusPage() {
     });
   };
 
+  const getModeLabel = useCallback(
+    (value: typeof mode) => {
+      switch (value) {
+        case "deepWork":
+          return t.focus.deepWork;
+        case "marathon":
+          return t.focus.marathon;
+        case "custom":
+          return t.focus.custom;
+        default:
+          return t.focus.pomodoro;
+      }
+    },
+    [t],
+  );
+
   const modeOptions = [
-    { key: "pomodoro" as const, label: t.focus.pomodoro, icon: Timer, desc: "25 / 5 min" },
-    { key: "deepWork" as const, label: t.focus.deepWork, icon: Clock, desc: "50 / 10 min" },
-    { key: "marathon" as const, label: t.focus.marathon, icon: Zap, desc: "90 / 15 min" },
-    { key: "custom" as const, label: t.focus.custom, icon: Star, desc: `${customMinutes} min` },
+    { key: "pomodoro" as const, label: t.focus.pomodoro, icon: Timer, desc: `25 / 5 ${t.common.minutesShort}` },
+    { key: "deepWork" as const, label: t.focus.deepWork, icon: Clock, desc: `50 / 10 ${t.common.minutesShort}` },
+    { key: "marathon" as const, label: t.focus.marathon, icon: Zap, desc: `90 / 15 ${t.common.minutesShort}` },
+    { key: "custom" as const, label: t.focus.custom, icon: Star, desc: `${customMinutes} ${t.common.minutesShort}` },
   ];
 
   return (
@@ -169,7 +185,7 @@ export default function FocusPage() {
           />
           <SummaryPanel
             label={t.focus.sessionLengthLabel}
-            value={<>{getWorkMinutes()}<span className="ml-1 text-base font-normal text-muted-foreground">min</span></>}
+            value={<>{getWorkMinutes()}<span className="ml-1 text-base font-normal text-muted-foreground">{t.common.minutesShort}</span></>}
             hint={`${getBreakMinutes()} ${t.focus.breakRhythm}`}
             valueClassName="mt-3 text-2xl font-semibold tracking-tight"
           />
@@ -286,7 +302,7 @@ export default function FocusPage() {
               >
                 {formatTime(timeLeft)}
               </p>
-              <span className="text-xs text-muted-foreground mt-2 capitalize font-medium">{mode === "deepWork" ? "Deep Work" : mode}</span>
+              <span className="text-xs text-muted-foreground mt-2 capitalize font-medium">{getModeLabel(mode)}</span>
             </div>
           </div>
 
@@ -340,7 +356,9 @@ export default function FocusPage() {
               <div>
                 <span className="block">{t.focus.sessionComplete}</span>
                 <span className="block text-xs font-normal text-muted-foreground mt-0.5">
-                  {getWorkMinutes()} min {mode === "deepWork" ? "Deep Work" : mode} session
+                  {t.focus.sessionSummary
+                    .replace("{minutes}", String(getWorkMinutes()))
+                    .replace("{mode}", getModeLabel(mode))}
                 </span>
               </div>
             </DialogTitle>

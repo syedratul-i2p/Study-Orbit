@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: study-orbit
+    env: node
+    buildCommand: npm install && npm run build
+    preDeployCommand: npm run db:push
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

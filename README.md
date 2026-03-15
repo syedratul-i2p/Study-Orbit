@@ -1,166 +1,177 @@
 # Study Orbit
 
-A bilingual (English/Bangla) AI-powered academic study platform built with React, Express, and PostgreSQL.
+Study Orbit is a bilingual (English and Bangla) academic study platform built for students who want structured planning, calmer focus sessions, AI-assisted learning help, and clearer progress tracking in one place.
 
-## Features
+## Stack
 
-- Session-based authentication with OTP login and password reset
-- Onboarding flow with academic profile setup
-- Subject and topic management
-- Study planner with date-based scheduling
-- Pomodoro focus timer with session tracking
-- Multi-mode AI assistant with streaming responses (SSE)
-- Floating AI chat widget accessible from every page
-- Progress dashboard with charts and analytics
-- Friend system with real-time chat (WebSocket)
-- Profile picture upload
-- Local backup and restore (IndexedDB)
-- Dark mode support
-- Bilingual UI (English and Bangla)
+- Frontend: React 18, Wouter, React Query, Tailwind CSS, shadcn/ui, Framer Motion
+- Backend: Express 5, Node.js, TypeScript
+- Database: PostgreSQL with Drizzle ORM
+- Realtime: WebSocket chat
+- AI: OpenAI-backed provider routing
 
-## Tech Stack
-
-- **Frontend:** React 18, Tailwind CSS 3, shadcn/ui, Framer Motion, Recharts, Wouter
-- **Backend:** Express 5, Node.js, TypeScript
-- **Database:** PostgreSQL with Drizzle ORM
-- **AI:** OpenAI GPT-4o / GPT-4o-mini
-- **Real-time:** WebSocket (ws)
-
-## Prerequisites
+## Requirements
 
 - Node.js 20+
-- PostgreSQL 14+
-- An OpenAI API key
+- npm 10+
+- PostgreSQL 14+ or Docker Desktop
 
-## Local Development Setup
+## Environment Variables
 
-1. **Clone the repository:**
+Copy [C:\Study_Orbit\.env.example](C:\Study_Orbit\.env.example) to `.env` and set:
 
-   ```bash
-   git clone https://github.com/your-username/study-orbit.git
-   cd study-orbit
-   ```
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `SESSION_SECRET` | Yes | Session signing secret |
+| `OPENAI_API_KEY` | Yes for AI features | OpenAI API key |
+| `PORT` | No | Server port, defaults to `5000` |
+| `NODE_ENV` | No | `development` or `production` |
 
-2. **Install dependencies:**
+Example local database URL:
 
-   ```bash
-   npm install
-   ```
+```env
+DATABASE_URL=postgresql://studyorbit:studyorbit@localhost:5432/studyorbit
+```
 
-3. **Set up environment variables:**
+## Windows PowerShell Local Development
 
-   ```bash
-   cp .env.example .env
-   ```
+1. Clone the repository:
 
-   Open `.env` and fill in the required values:
+```powershell
+git clone https://github.com/syedratul-i2p/Study-Orbit.git
+Set-Location Study-Orbit
+```
 
-   | Variable | Required | Description |
-   |----------|----------|-------------|
-   | `DATABASE_URL` | Yes | PostgreSQL connection string (e.g. `postgresql://user:pass@localhost:5432/studyorbit`) |
-   | `SESSION_SECRET` | Yes | A random string for session encryption. Generate one with `openssl rand -hex 32` |
-   | `OPENAI_API_KEY` | Yes | Your OpenAI API key from [platform.openai.com](https://platform.openai.com/api-keys) |
-   | `PORT` | No | Server port (default: `5000`) |
-   | `NODE_ENV` | No | `development` or `production` |
+2. Install dependencies:
 
-4. **Create the database:**
+```powershell
+npm install
+```
 
-   ```bash
-   createdb studyorbit
-   ```
+3. Create your local env file:
 
-5. **Push the schema to the database:**
+```powershell
+Copy-Item .env.example .env
+```
 
-   ```bash
-   npm run db:push
-   ```
+4. Start PostgreSQL.
 
-6. **Start the development server:**
+If you already run PostgreSQL locally, use that and set `DATABASE_URL` accordingly.
 
-   ```bash
-   npm run dev
-   ```
+If you want a local containerized database, use the included [C:\Study_Orbit\compose.yaml](C:\Study_Orbit\compose.yaml):
 
-   The app will be available at [http://localhost:5000](http://localhost:5000).
+```powershell
+docker compose up -d
+```
 
-## Scripts
+5. Push the schema:
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with Vite HMR |
-| `npm run build` | Build for production (client + server) |
-| `npm start` | Start the production server |
-| `npm run check` | Run TypeScript type checking |
-| `npm run db:push` | Push schema changes to the database |
+```powershell
+npm run db:push
+```
 
-## Production Deployment
+6. Start the development server:
 
-### Build and Run
+```powershell
+npm run dev
+```
 
-```bash
+Expected local URL:
+
+- App: [http://localhost:5000](http://localhost:5000)
+- Health check: [http://localhost:5000/health](http://localhost:5000/health)
+
+## Local Production-Style Run
+
+After your `.env` is configured and the database is available:
+
+```powershell
 npm run build
 npm start
 ```
 
-The build step compiles the React frontend with Vite and bundles the Express server with esbuild into `dist/index.cjs`. The production server serves the static frontend and API from a single process on the configured port.
+Expected local URL:
 
-### Deploy to a VPS or Cloud VM
+- App: [http://localhost:5000](http://localhost:5000)
+- Health check: [http://localhost:5000/health](http://localhost:5000/health)
 
-1. Clone the repo and install dependencies on your server
-2. Set up PostgreSQL and create the database
-3. Configure environment variables (`.env` or your hosting provider's secret manager)
-4. Run `npm run db:push` to set up the database schema
-5. Run `npm run build` to create the production bundle
-6. Run `npm start` to launch the server (use a process manager like PM2 for production)
+## Scripts
 
-```bash
-# Example with PM2
-npm install -g pm2
-npm run build
-pm2 start dist/index.cjs --name study-orbit
-```
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Express app with Vite middleware in development |
+| `npm run build` | Build the client and bundle the server |
+| `npm start` | Run the production bundle |
+| `npm run check` | Run TypeScript type checking |
+| `npm run db:push` | Push the Drizzle schema to PostgreSQL |
 
-### Deploy to Railway / Render / Fly.io
+## Render Deployment
 
-1. Connect your GitHub repository
-2. Set the build command to `npm run build`
-3. Set the start command to `npm start`
-4. Add environment variables (`DATABASE_URL`, `SESSION_SECRET`, `OPENAI_API_KEY`)
-5. The platform will handle the rest
+This repository now includes a Blueprint at [C:\Study_Orbit\render.yaml](C:\Study_Orbit\render.yaml).
+
+### What the Blueprint config does
+
+- Builds with `npm install && npm run build`
+- Runs `npm run db:push` before deploy
+- Starts the app with `npm start`
+- Uses `/health` for Render health checks
+- Generates `SESSION_SECRET`
+- Expects `DATABASE_URL` and `OPENAI_API_KEY` to be supplied securely in Render
+
+### Deploy on Render
+
+1. Push the latest `main` branch to GitHub.
+2. In Render, choose Blueprint deploy for this repository.
+3. Confirm the detected service from [C:\Study_Orbit\render.yaml](C:\Study_Orbit\render.yaml).
+4. Supply or confirm:
+   - `DATABASE_URL`
+   - `OPENAI_API_KEY`
+5. Let Render generate `SESSION_SECRET`.
+6. Deploy.
+
+If you prefer not to use Blueprint sync, create a Node web service manually with:
+
+- Build command: `npm install && npm run build`
+- Pre-deploy command: `npm run db:push`
+- Start command: `npm start`
+- Health check path: `/health`
 
 ## Project Structure
 
-```
-study-orbit/
-  client/               # React frontend
+```text
+Study-Orbit/
+  client/
     src/
-      components/       # UI components (shadcn/ui + custom)
-      hooks/            # Custom React hooks
-      lib/              # Auth, i18n, theme, utilities
-      pages/            # Page components (14 pages)
-    index.html          # HTML entry point
-  server/               # Express backend
-    index.ts            # Server entry point
-    routes.ts           # All API routes
-    storage.ts          # Database operations (Drizzle ORM)
-    auth.ts             # Authentication (bcrypt + sessions)
-    ai-providers.ts     # OpenAI integration with streaming
-    websocket.ts        # WebSocket server for real-time chat
-    db.ts               # Database connection pool
-    vite.ts             # Vite dev middleware (dev only)
-    static.ts           # Static file serving (prod only)
-  shared/               # Shared between frontend and backend
-    schema.ts           # Drizzle schema + Zod validators
-    models/             # Additional data models
+      components/
+      hooks/
+      lib/
+      pages/
+  server/
+    ai-providers.ts
+    auth.ts
+    db.ts
+    index.ts
+    routes.ts
+    static.ts
+    storage.ts
+    vite.ts
+    websocket.ts
+  shared/
+    schema.ts
+    models/
   script/
-    build.ts            # Production build script
-  .env.example          # Template for environment variables
-  drizzle.config.ts     # Drizzle Kit configuration
-  tailwind.config.ts    # Tailwind CSS configuration
-  tsconfig.json         # TypeScript configuration
-  vite.config.ts        # Vite configuration
+    build.ts
+  compose.yaml
+  drizzle.config.ts
+  render.yaml
+  tailwind.config.ts
+  tsconfig.json
+  vite.config.ts
 ```
 
-## License
+## Notes
 
-MIT
+- The app requires PostgreSQL. It will not boot without `DATABASE_URL`.
+- AI features require `OPENAI_API_KEY`, but non-AI routes can still boot without using those features.
+- `.env`, `dist`, `node_modules`, and `.codex-artifacts` are not tracked.

@@ -75,7 +75,7 @@ function RestoreModal({ open, onClose, snapshot, t, onComplete }: {
       onComplete();
       onClose();
     } catch {
-      toast({ title: t.common?.error || "Error", variant: "destructive" });
+      toast({ title: t.common.error, variant: "destructive" });
     } finally {
       setIsRestoring(false);
       setMode(null);
@@ -168,7 +168,7 @@ function RestoreModal({ open, onClose, snapshot, t, onComplete }: {
         <div className="border-t px-6 py-4 bg-muted/30">
           <Button variant="ghost" size="sm" onClick={onClose} disabled={isRestoring} className="w-full" data-testid="button-restore-cancel">
             <X className="w-4 h-4 mr-1" />
-            {t.common?.cancel || "Cancel"}
+            {t.common.cancel}
           </Button>
         </div>
       </motion.div>
@@ -780,7 +780,7 @@ export default function SettingsPage() {
                     data-testid="button-toggle-snapshots"
                   >
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAllSnapshots ? "rotate-180" : ""}`} />
-                    {showAllSnapshots ? "▲" : `${snapshots.length} ${t.backup.snapshotCount} ▼`}
+                    {showAllSnapshots ? t.backup.showFewerSnapshots : t.backup.showMoreSnapshots}
                   </button>
                 )}
               </>
