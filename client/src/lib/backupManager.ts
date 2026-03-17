@@ -297,7 +297,9 @@ export function downloadBackupFile(snapshots: BackupSnapshot[]) {
   URL.revokeObjectURL(url);
 }
 
-export async function shareBackupFile(snapshots: BackupSnapshot[]): Promise<boolean> {
+export type ShareBackupResult = "shared" | "downloaded" | "cancelled" | "unsupported";
+
+export async function shareBackupFile(snapshots: BackupSnapshot[]): Promise<ShareBackupResult> {
   const json = exportBackupFile(snapshots);
   const blob = new Blob([json], { type: "application/json" });
   const file = new File(
@@ -313,12 +315,15 @@ export async function shareBackupFile(snapshots: BackupSnapshot[]): Promise<bool
         text: "My Study Orbit data backup",
         files: [file],
       });
-      return true;
+      return "shared";
     } catch {
-      return false;
+      downloadBackupFile(snapshots);
+      return "cancelled";
     }
   }
-  return false;
+
+  downloadBackupFile(snapshots);
+  return "unsupported";
 }
 
 export function canShare(): boolean {

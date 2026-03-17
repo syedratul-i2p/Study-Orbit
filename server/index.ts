@@ -12,6 +12,12 @@ if (!process.env.SESSION_SECRET) {
 const app = express();
 const httpServer = createServer(app);
 
+if (process.env.NODE_ENV === "production") {
+  // Render terminates HTTPS at the proxy, so Express must trust the first hop
+  // to correctly detect secure requests for session cookies.
+  app.set("trust proxy", 1);
+}
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;

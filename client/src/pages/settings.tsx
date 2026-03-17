@@ -29,7 +29,6 @@ import {
   restoreSnapshot,
   downloadBackupFile,
   shareBackupFile,
-  canShare,
   parseBackupFile,
   importBackupFile,
   requestPersistentStorage,
@@ -37,6 +36,7 @@ import {
   getStorageEstimate,
   formatBytes,
   startAutoSnapshots,
+  type ShareBackupResult,
 } from "@/lib/backupManager";
 
 interface BackupItem {
@@ -323,7 +323,6 @@ export default function SettingsPage() {
   const [importing, setImporting] = useState(false);
   const [persisted, setPersisted] = useState(false);
   const [storageInfo, setStorageInfo] = useState<{ used: number; quota: number } | null>(null);
-  const [shareAvailable] = useState(() => canShare());
 
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -340,7 +339,7 @@ export default function SettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/backup/list"] });
-      toast({ title: t.backup.backupCreated, description: t.backup.includesAll });
+      toast({ title: t.backup.backupCreated, description: t.backup.serverBackupRollingDesc });
     },
     onError: () => toast({ title: t.common.error, variant: "destructive" }),
   });
@@ -447,10 +446,24 @@ export default function SettingsPage() {
 
   const handleShare = async () => {
     if (snapshots.length === 0) return;
-    const shared = await shareBackupFile(snapshots);
+    const result: ShareBackupResult = await shareBackupFile(snapshots);
+
+    if (result === "shared") {
+      toast({ title: t.backup.shareSuccess });
+      return;
+    }
+
+    if (result === "cancelled") {
+      toast({
+        title: t.backup.shareCancelled,
+        description: t.backup.shareFallbackDownloaded,
+      });
+      return;
+    }
+
     toast({
-      title: shared ? t.backup.shareSuccess : t.backup.shareFailed,
-      variant: shared ? "default" : "destructive",
+      title: t.backup.noShareSupport,
+      description: t.backup.shareFallbackDownloaded,
     });
   };
 
@@ -706,19 +719,17 @@ export default function SettingsPage() {
               {t.backup.importFile}
             </Button>
 
-            {shareAvailable && (
-              <Button
-                onClick={handleShare}
-                disabled={snapshots.length === 0}
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                data-testid="button-share-backup"
-              >
-                <Share2 className="w-4 h-4" />
-                {t.backup.shareBackup}
-              </Button>
-            )}
+            <Button
+              onClick={handleShare}
+              disabled={snapshots.length === 0}
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              data-testid="button-share-backup"
+            >
+              <Share2 className="w-4 h-4" />
+              {t.backup.shareBackup}
+            </Button>
 
             <input
               ref={fileInputRef}
@@ -761,17 +772,15 @@ export default function SettingsPage() {
             ) : (
               <>
                 <div className="space-y-2.5">
-                  <AnimatePresence mode="popLayout">
-                    {visibleSnapshots.map((snap) => (
-                      <SnapshotCard
-                        key={snap.id}
-                        snapshot={snap}
-                        onRestore={() => setRestoreTarget(snap)}
-                        onDelete={() => setDeleteTarget(snap.id)}
-                        t={t}
-                      />
-                    ))}
-                  </AnimatePresence>
+                  {visibleSnapshots.map((snap) => (
+                    <SnapshotCard
+                      key={snap.id}
+                      snapshot={snap}
+                      onRestore={() => setRestoreTarget(snap)}
+                      onDelete={() => setDeleteTarget(snap.id)}
+                      t={t}
+                    />
+                  ))}
                 </div>
                 {snapshots.length > 3 && (
                   <button
@@ -794,6 +803,9 @@ export default function SettingsPage() {
                   <Cloud className="w-4 h-4 text-muted-foreground" />
                   {t.backup.serverBackup}
                 </h3>
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+                  {t.backup.rollingBackup}
+                </span>
                 <Button
                   onClick={() => createBackup.mutate()}
                   disabled={createBackup.isPending}
@@ -821,6 +833,7 @@ export default function SettingsPage() {
                           <p className="text-xs text-muted-foreground">
                             {backup.messageCount} {t.backup.messageCount} · {backup.conversationCount} {t.backup.conversations}
                           </p>
+                          <p className="text-[11px] text-muted-foreground/80">{t.backup.serverBackupRollingDesc}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -848,6 +861,9 @@ export default function SettingsPage() {
                   <Cloud className="w-4 h-4 text-muted-foreground" />
                   {t.backup.serverBackup}
                 </h3>
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+                  {t.backup.rollingBackup}
+                </span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/10">
                 <div className="flex items-center gap-2.5">

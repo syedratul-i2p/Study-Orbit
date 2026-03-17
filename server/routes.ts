@@ -21,20 +21,35 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  const isProduction = process.env.NODE_ENV === "production";
   const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
+    proxy: isProduction,
     store: new MemoryStore({ checkPeriod: 86400000 }),
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction ? "auto" : false,
       httpOnly: true,
       sameSite: "lax",
     },
   });
 
   app.use(sessionMiddleware);
+
+  async function attachAuthenticatedSession(req: Request, userId: number): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      req.session.regenerate((regenError) => {
+        if (regenError) return reject(regenError);
+        req.session.userId = userId;
+        req.session.save((saveError) => {
+          if (saveError) return reject(saveError);
+          resolve();
+        });
+      });
+    });
+  }
 
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
@@ -48,7 +63,7 @@ export async function registerRoutes(
         ...data,
         password: hashedPassword,
       });
-      req.session.userId = user.id;
+      await attachAuthenticatedSession(req, user.id);
       const { password, ...safeUser } = user;
       res.json(safeUser);
     } catch (error: any) {
@@ -63,7 +78,7 @@ export async function registerRoutes(
       if (!user) return res.status(401).json({ message: "Invalid credentials" });
       const valid = await comparePassword(data.password, user.password);
       if (!valid) return res.status(401).json({ message: "Invalid credentials" });
-      req.session.userId = user.id;
+      await attachAuthenticatedSession(req, user.id);
       const { password, ...safeUser } = user;
       res.json(safeUser);
     } catch (error: any) {
@@ -104,7 +119,7 @@ export async function registerRoutes(
       const user = await storage.getUserByEmail(email);
       if (!user) return res.status(404).json({ message: "User not found" });
 
-      req.session.userId = user.id;
+      await attachAuthenticatedSession(req, user.id);
       const { password, ...safeUser } = user;
       res.json(safeUser);
     } catch (error: any) {
@@ -691,8 +706,31 @@ export async function registerRoutes(
 
   setupWebSocket(httpServer, sessionMiddleware);
 
-  let aiRequestCount = 0;
-  let aiRequestResetTime = Date.now();
+  const aiRateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+
+  function getAIRateLimitKey(req: Request): string {
+    if (req.session.userId) return `user:${req.session.userId}`;
+    return `ip:${req.ip}`;
+  }
+
+  function checkAIRateLimit(req: Request): boolean {
+    const now = Date.now();
+    const key = getAIRateLimitKey(req);
+    const existing = aiRateLimitBuckets.get(key);
+
+    if (!existing || now > existing.resetAt) {
+      aiRateLimitBuckets.set(key, { count: 1, resetAt: now + 60_000 });
+      return true;
+    }
+
+    if (existing.count >= 20) {
+      return false;
+    }
+
+    existing.count += 1;
+    aiRateLimitBuckets.set(key, existing);
+    return true;
+  }
 
   app.get("/api/ai/providers", requireAuth, async (_req: Request, res: Response) => {
     const providers = getAvailableProviders();
@@ -700,18 +738,14 @@ export async function registerRoutes(
       id: p.id,
       name: p.name,
       available: p.available,
+      mode: p.mode,
       strengths: p.strengths,
     })));
   });
 
   app.post("/api/ai/chat", requireAuth, async (req: Request, res: Response) => {
     try {
-      if (Date.now() - aiRequestResetTime > 60000) {
-        aiRequestCount = 0;
-        aiRequestResetTime = Date.now();
-      }
-      aiRequestCount++;
-      if (aiRequestCount > 20) {
+      if (!checkAIRateLimit(req)) {
         return res.status(429).json({ message: "Too many requests. Please wait a moment." });
       }
 
@@ -725,13 +759,29 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Messages are required" });
       }
 
+      const availableProviders = getAvailableProviders().filter((item) => item.available);
+      if (availableProviders.length === 0) {
+        return res.status(503).json({
+          message: "AI is currently unavailable. Configure an AI provider to continue.",
+          code: "AI_UNAVAILABLE",
+        });
+      }
+
+      if (provider && provider !== "auto" && !availableProviders.some((item) => item.id === provider)) {
+        return res.status(400).json({
+          message: "The selected AI mode is unavailable right now.",
+          code: "AI_PROVIDER_UNAVAILABLE",
+        });
+      }
+
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
+      res.flushHeaders?.();
 
       const result = await streamAIResponse(messages, userContext, provider);
 
-      res.write(`data: ${JSON.stringify({ meta: { provider: result.provider, model: result.model, taskType: result.taskType } })}\n\n`);
+      res.write(`data: ${JSON.stringify({ meta: { provider: result.provider, model: result.model, taskType: result.taskType, mode: result.mode, routingReason: result.routingReason } })}\n\n`);
 
       for await (const chunk of result.stream) {
         res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);

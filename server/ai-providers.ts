@@ -1,92 +1,178 @@
 import OpenAI from "openai";
 
 export type AIProvider = "auto" | "orbitquick" | "orbitdeep" | "studyexpert";
-export type TaskType = "general" | "academic" | "reasoning" | "research" | "summary" | "creative" | "code" | "math";
+export type AIMode = "auto" | "fast" | "think" | "expert";
+export type TaskType =
+  | "general"
+  | "academic"
+  | "reasoning"
+  | "research"
+  | "summary"
+  | "creative"
+  | "code"
+  | "math";
 
 export interface ProviderConfig {
-  id: AIProvider;
+  id: Exclude<AIProvider, "auto">;
+  mode: Exclude<AIMode, "auto">;
   name: string;
   available: boolean;
   models: { fast: string; deep: string };
   strengths: TaskType[];
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  ...(process.env.AI_INTEGRATIONS_OPENAI_BASE_URL && {
-    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  }),
-});
+interface RouteDecision {
+  provider: Exclude<AIProvider, "auto">;
+  mode: Exclude<AIMode, "auto">;
+  routingReason: string;
+}
+
+const OPENAI_API_KEY =
+  process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+
+function createOpenAIClient() {
+  if (!OPENAI_API_KEY) {
+    throw new Error("AI provider is not configured");
+  }
+
+  return new OpenAI({
+    apiKey: OPENAI_API_KEY,
+    ...(process.env.AI_INTEGRATIONS_OPENAI_BASE_URL && {
+      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+    }),
+  });
+}
 
 export function getAvailableProviders(): ProviderConfig[] {
-  const providers: ProviderConfig[] = [
+  const available = Boolean(OPENAI_API_KEY);
+
+  return [
     {
       id: "orbitquick",
-      name: "Orbit Quick ⚡",
-      available: !!(process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY),
+      mode: "fast",
+      name: "Fast",
+      available,
       models: { fast: "gpt-4o-mini", deep: "gpt-4o-mini" },
-      strengths: ["general", "creative", "code", "summary"],
+      strengths: ["general", "creative", "summary", "code"],
     },
     {
       id: "orbitdeep",
-      name: "Orbit Deep 🧠",
-      available: !!(process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY),
-      models: { fast: "gpt-4o", deep: "gpt-4o" },
-      strengths: ["reasoning", "research"],
+      mode: "think",
+      name: "Think",
+      available,
+      models: { fast: "gpt-4o-mini", deep: "gpt-4o" },
+      strengths: ["reasoning", "research", "code"],
     },
     {
       id: "studyexpert",
-      name: "Study Expert 📚",
-      available: !!(process.env.OPENAI_API_KEY || process.env.AI_INTEGRATIONS_OPENAI_API_KEY),
+      mode: "expert",
+      name: "Study Expert",
+      available,
       models: { fast: "gpt-4o-mini", deep: "gpt-4o" },
-      strengths: ["academic", "math"],
+      strengths: ["academic", "math", "summary"],
     },
   ];
-  return providers;
 }
 
 const SIMPLE_PATTERNS = [
-  /^(what is|ki|কি|কে|কোন|কত|কবে|কেন|কোথায়|কিভাবে|define|meaning of)\b/i,
-  /^(who|when|where|how many|which)\b/i,
+  /^(what is|define|meaning of)\b/i,
+  /^(who|when|where|which|how many)\b/i,
 ];
 
 const COMPLEX_KEYWORDS = [
-  "explain", "ব্যাখ্যা", "বিশ্লেষণ", "analyze", "analysis", "compare", "তুলনা",
-  "prove", "প্রমাণ", "derive", "derivation", "নির্ণয়", "সমাধান", "solve",
-  "essay", "রচনা", "paragraph", "অনুচ্ছেদ", "describe in detail", "বিস্তারিত",
-  "discuss", "আলোচনা", "evaluate", "মূল্যায়ন", "differentiate", "পার্থক্য",
-  "advantages and disadvantages", "সুবিধা ও অসুবিধা", "cause and effect",
-  "কারণ ও ফলাফল", "steps", "ধাপ", "procedure", "পদ্ধতি", "mechanism", "কৌশল",
-  "theory", "তত্ত্ব", "theorem", "উপপাদ্য", "notes", "নোট",
-  "exam answer", "পরীক্ষার উত্তর", "broad question", "রচনামূলক",
-  "short note", "সংক্ষিপ্ত টীকা", "critical analysis", "সমালোচনা",
+  "explain",
+  "analyze",
+  "analysis",
+  "compare",
+  "prove",
+  "derive",
+  "solve",
+  "essay",
+  "describe in detail",
+  "discuss",
+  "evaluate",
+  "differentiate",
+  "advantages and disadvantages",
+  "cause and effect",
+  "steps",
+  "procedure",
+  "mechanism",
+  "theory",
+  "theorem",
+  "notes",
+  "exam answer",
+  "broad question",
+  "short note",
+  "critical analysis",
 ];
 
 const MATH_KEYWORDS = [
-  "calculate", "গণনা", "integral", "derivative", "সমীকরণ", "equation",
-  "formula", "সূত্র", "algebra", "geometry", "জ্যামিতি", "trigonometry",
-  "calculus", "matrix", "probability", "সম্ভাবনা", "statistics", "পরিসংখ্যান",
-  "proof", "প্রমাণ", "theorem", "উপপাদ্য", "solve", "সমাধান",
-  "+", "-", "×", "÷", "=", "∫", "∑", "√",
+  "calculate",
+  "integral",
+  "derivative",
+  "equation",
+  "formula",
+  "algebra",
+  "geometry",
+  "trigonometry",
+  "calculus",
+  "matrix",
+  "probability",
+  "statistics",
+  "proof",
+  "theorem",
+  "solve",
+  "=",
+  "sqrt",
 ];
 
 const RESEARCH_KEYWORDS = [
-  "research", "গবেষণা", "literature", "সাহিত্য", "citation", "source",
-  "reference", "তথ্যসূত্র", "journal", "paper", "study", "survey",
-  "methodology", "পদ্ধতি",
+  "research",
+  "literature",
+  "citation",
+  "source",
+  "reference",
+  "journal",
+  "paper",
+  "study",
+  "survey",
+  "methodology",
 ];
 
 const CODE_KEYWORDS = [
-  "code", "কোড", "program", "প্রোগ্রাম", "function", "ফাংশন", "algorithm",
-  "অ্যালগরিদম", "debug", "syntax", "compile", "html", "css", "javascript",
-  "python", "java", "c++",
+  "code",
+  "program",
+  "function",
+  "algorithm",
+  "debug",
+  "syntax",
+  "compile",
+  "html",
+  "css",
+  "javascript",
+  "python",
+  "java",
+  "c++",
+  "typescript",
+  "react",
 ];
 
 const ACADEMIC_KEYWORDS = [
-  "mcq", "quiz", "chapter", "অধ্যায়", "পাঠ", "lesson", "textbook", "পাঠ্যবই",
-  "nctb", "এনসিটিবি", "board", "বোর্ড", "ssc", "hsc", "এসএসসি", "এইচএসসি",
-  "class", "ক্লাস", "subject", "বিষয়", "exam", "পরীক্ষা", "marks", "নম্বর",
-  "suggestion", "সাজেশন", "model test", "revision", "রিভিশন",
+  "mcq",
+  "quiz",
+  "chapter",
+  "lesson",
+  "textbook",
+  "board",
+  "ssc",
+  "hsc",
+  "class",
+  "subject",
+  "exam",
+  "marks",
+  "suggestion",
+  "model test",
+  "revision",
 ];
 
 export interface ChatMessage {
@@ -95,27 +181,33 @@ export interface ChatMessage {
 }
 
 function detectTaskType(messages: ChatMessage[]): TaskType {
-  const lastMsg = messages[messages.length - 1];
-  if (!lastMsg) return "general";
-  const content = lastMsg.content.toLowerCase();
+  const lastMessage = messages[messages.length - 1];
+  if (!lastMessage) return "general";
 
-  for (const kw of MATH_KEYWORDS) {
-    if (content.includes(kw.toLowerCase())) return "math";
-  }
-  for (const kw of CODE_KEYWORDS) {
-    if (content.includes(kw.toLowerCase())) return "code";
-  }
-  for (const kw of ACADEMIC_KEYWORDS) {
-    if (content.includes(kw.toLowerCase())) return "academic";
-  }
-  for (const kw of RESEARCH_KEYWORDS) {
-    if (content.includes(kw.toLowerCase())) return "research";
+  const content = lastMessage.content.toLowerCase();
+
+  if (MATH_KEYWORDS.some((keyword) => content.includes(keyword.toLowerCase()))) {
+    return "math";
   }
 
-  if (content.includes("summary") || content.includes("সারসংক্ষেপ") || content.includes("summarize")) return "summary";
+  if (CODE_KEYWORDS.some((keyword) => content.includes(keyword.toLowerCase()))) {
+    return "code";
+  }
 
-  for (const kw of COMPLEX_KEYWORDS) {
-    if (content.includes(kw.toLowerCase())) return "academic";
+  if (ACADEMIC_KEYWORDS.some((keyword) => content.includes(keyword.toLowerCase()))) {
+    return "academic";
+  }
+
+  if (RESEARCH_KEYWORDS.some((keyword) => content.includes(keyword.toLowerCase()))) {
+    return "research";
+  }
+
+  if (content.includes("summary") || content.includes("summarize")) {
+    return "summary";
+  }
+
+  if (COMPLEX_KEYWORDS.some((keyword) => content.includes(keyword.toLowerCase()))) {
+    return "academic";
   }
 
   if (messages.length > 4) return "reasoning";
@@ -123,173 +215,143 @@ function detectTaskType(messages: ChatMessage[]): TaskType {
 }
 
 function isComplexQuery(messages: ChatMessage[]): boolean {
-  const lastMsg = messages[messages.length - 1];
-  if (!lastMsg) return false;
-  const content = lastMsg.content;
+  const lastMessage = messages[messages.length - 1];
+  if (!lastMessage) return false;
+
+  const content = lastMessage.content;
   const lower = content.toLowerCase();
 
-  for (const pat of SIMPLE_PATTERNS) {
-    if (pat.test(lower) && content.length < 80) return false;
+  if (SIMPLE_PATTERNS.some((pattern) => pattern.test(lower)) && content.length < 80) {
+    return false;
   }
 
   if (content.length < 40 && messages.length <= 2) return false;
-
-  if (content.length > 120) return true;
+  if (content.length > 140) return true;
   if (messages.length > 5) return true;
-  for (const kw of COMPLEX_KEYWORDS) {
-    if (lower.includes(kw.toLowerCase())) return true;
-  }
-  return false;
+
+  return COMPLEX_KEYWORDS.some((keyword) => lower.includes(keyword.toLowerCase()));
 }
 
-function selectProvider(taskType: TaskType, complex: boolean, preferredProvider?: AIProvider): AIProvider {
-  if (preferredProvider && preferredProvider !== "auto") {
-    const providers = getAvailableProviders();
-    const prov = providers.find(p => p.id === preferredProvider);
-    if (prov?.available) return preferredProvider;
-  }
-
-  if (taskType === "academic" || taskType === "math") return "studyexpert";
-  if (taskType === "reasoning" || taskType === "research") return "orbitdeep";
-  if (complex) return "orbitdeep";
-  return "orbitquick";
+function pickAvailableProvider(id: AIProvider) {
+  if (id === "auto") return undefined;
+  return getAvailableProviders().find((provider) => provider.id === id && provider.available);
 }
 
-const ORBIT_QUICK_PROMPT = `You are Orbit Quick — the fast, friendly AI tutor inside Study Orbit. You give rapid, clear answers.
-
-Rules:
-- Detect input language (Bangla/English) and respond in the SAME language
-- For simple questions (definitions, facts, "what is X"): give a direct 1-3 sentence answer — no extra formatting
-- For slightly longer questions: use bullet points, keep it concise
-- For Bangla: use শুদ্ধ বাংলা (formal academic Bangla)
-- Be warm but efficient — students are studying and need quick help
-- If a question needs a detailed answer, give a good summary and say "আরও বিস্তারিত জানতে Orbit Deep ব্যবহার করুন" or "For more detail, try Orbit Deep"`;
-
-const ORBIT_DEEP_PROMPT = `You are Orbit Deep — the advanced reasoning AI tutor inside Study Orbit. You specialize in deep analysis, detailed explanations, and thorough academic answers.
-
-Core rules:
-- Detect input language and respond in the SAME language
-- Use clear structure: headings (##), bullet points, numbered steps
-- Give complete, thorough answers with examples
-- For Bangla: use শুদ্ধ বাংলা with proper academic terminology
-
-For concept/theory questions:
-- **সংজ্ঞা / Definition**: Clear definition
-- **ব্যাখ্যা / Explanation**: Thorough explanation with context
-- **উদাহরণ / Example**: Practical examples
-- **মূল পয়েন্ট / Key Points**: Essential takeaways
-
-For comparison/analysis:
-- Present multiple perspectives
-- Use tables when comparing
-- Draw clear conclusions
-
-For math/technical:
-- **দেওয়া আছে / Given**: What is provided
-- **সূত্র / Formula**: Relevant formula(s)
-- **ধাপসমূহ / Steps**: Step-by-step solution
-- **চূড়ান্ত উত্তর / Final Answer**: Clear answer
-- **সাধারণ ভুল / Common Mistakes**: What to avoid
-
-Additional:
-- Never fabricate information
-- If unsure, say so clearly
-- Adjust complexity to the student's level`;
-
-const STUDY_EXPERT_FAST_PROMPT = `You are Study Expert — the specialized academic tutor inside Study Orbit, built specifically for Bangladeshi students (SSC, HSC, Honours, all boards). You give fast, exam-focused answers.
-
-Your expertise:
-- Bangladesh National Curriculum (NCTB textbooks)
-- SSC/HSC exam patterns, marking schemes, board questions
-- All 9 general boards + Madrasa + Technical
-- University admission prep (Medical, Engineering, DU/JU/RU)
-
-Rules:
-- Detect input language (Bangla/English), respond in SAME language
-- Give direct, exam-ready answers
-- Include mark-distribution hints when relevant
-- For Bangla: use শুদ্ধ বাংলা with proper academic terms
-- For MCQ: give correct answer + brief explanation + 1-2 related facts
-- For short questions: exam-format answer within expected word limit
-- Always prioritize accuracy`;
-
-const STUDY_EXPERT_DEEP_PROMPT = `You are Study Expert — the comprehensive academic tutor inside Study Orbit, specialized for the Bangladesh education system. You are an expert exam preparation specialist who creates board-exam-ready answers.
-
-Your deep expertise:
-- **NCTB Curriculum**: All subjects, Class 6 to Class 12
-- **Board Exams**: SSC, HSC — all 9 general boards + Madrasa + Technical
-- **University Admission**: Medical (MBBS), Engineering (BUET, RUET, CUET, KUET), University tests (DU, JU, RU, CU, KU)
-- **Honours/Masters**: All major university subjects
-- **Competitive Exams**: BCS, Bank, NTRCA, Primary teacher exams
-
-For academic questions, structure responses as:
-
-📝 **প্রশ্নের ধরন / Question Type**: (সংক্ষিপ্ত / রচনামূলক / MCQ / গাণিতিক)
-
-📖 **উত্তর / Answer**:
-Give proper exam-writing format. For রচনামূলক (broad) questions:
-- ভূমিকা (Introduction)
-- মূল আলোচনা (Main Discussion) — numbered points
-- উদাহরণ (Examples)
-- উপসংহার (Conclusion)
-
-For MCQ/Short:
-- Direct correct answer first
-- Brief explanation
-- Related facts for revision
-
-🎯 **পরীক্ষার টিপস / Exam Tips**:
-- Expected marks and time allocation
-- Common mistakes to avoid
-- Key terms examiners look for
-
-🔄 **অনুশীলন / Practice**:
-- 2-3 similar practice questions
-
-Special rules:
-- Match answer length to expected marks (5-mark ≈ 150-200 words)
-- Use proper Bengali academic prose for Bangla answers
-- Include mathematical notation with clear steps
-- Reference NCTB textbook chapters when possible
-- For science: include formulas in Bengali and English
-- For humanities: include quotations, references, multiple perspectives
-- Never fabricate information`;
-
-function buildSystemPrompt(complex: boolean, userContext?: {
-  classLevel?: string;
-  department?: string;
-  board?: string;
-  subjectContext?: string;
-  chatLanguage?: string;
-}, providerId?: AIProvider): string {
-  let systemPrompt: string;
-
-  if (providerId === "studyexpert") {
-    systemPrompt = complex ? STUDY_EXPERT_DEEP_PROMPT : STUDY_EXPERT_FAST_PROMPT;
-  } else if (providerId === "orbitdeep") {
-    systemPrompt = ORBIT_DEEP_PROMPT;
-  } else {
-    systemPrompt = ORBIT_QUICK_PROMPT;
+function selectRouteDecision(
+  taskType: TaskType,
+  complex: boolean,
+  preferredProvider?: AIProvider,
+): RouteDecision {
+  const explicitlySelected = pickAvailableProvider(preferredProvider ?? "auto");
+  if (explicitlySelected) {
+    return {
+      provider: explicitlySelected.id,
+      mode: explicitlySelected.mode,
+      routingReason: "manual-selection",
+    };
   }
+
+  const availableProviders = getAvailableProviders().filter((provider) => provider.available);
+  if (availableProviders.length === 0) {
+    throw new Error("AI provider is not configured");
+  }
+
+  if (taskType === "math" || taskType === "academic") {
+    return { provider: "studyexpert", mode: "expert", routingReason: "study-task" };
+  }
+
+  if (taskType === "research" || taskType === "reasoning" || complex) {
+    return { provider: "orbitdeep", mode: "think", routingReason: "deep-reasoning" };
+  }
+
+  return { provider: "orbitquick", mode: "fast", routingReason: "fast-response" };
+}
+
+function selectModel(
+  provider: ProviderConfig,
+  taskType: TaskType,
+  complex: boolean,
+): { model: string; maxTokens: number } {
+  if (provider.id === "orbitquick") {
+    return { model: provider.models.fast, maxTokens: 1400 };
+  }
+
+  if (provider.id === "orbitdeep") {
+    return {
+      model: complex || taskType === "research" || taskType === "reasoning"
+        ? provider.models.deep
+        : provider.models.fast,
+      maxTokens: complex ? 3200 : 1800,
+    };
+  }
+
+  return {
+    model: complex || taskType === "math" || taskType === "academic"
+      ? provider.models.deep
+      : provider.models.fast,
+    maxTokens: complex ? 3600 : 2200,
+  };
+}
+
+const SYSTEM_PROMPTS: Record<Exclude<AIProvider, "auto">, string> = {
+  orbitquick: `You are Study Orbit Fast mode, a concise academic assistant.
+
+Rules:
+- Detect the user's language and reply in that same language.
+- If the user writes in Bangla, respond in clear, formal academic Bangla.
+- Give direct answers first. Use short bullet points only when helpful.
+- Do not over-explain simple questions.
+- If the request needs deep reasoning, still help, but keep the structure tight and readable.`,
+
+  orbitdeep: `You are Study Orbit Think mode, a careful reasoning assistant.
+
+Rules:
+- Detect the user's language and reply in that same language.
+- If the user writes in Bangla, respond in clear, formal academic Bangla.
+- Use structure: headings, steps, comparisons, and examples when useful.
+- Show reasoning clearly for analysis, research, and difficult study questions.
+- If information is uncertain, say so instead of inventing details.`,
+
+  studyexpert: `You are Study Orbit Study Expert mode, a structured academic tutor focused on student-friendly, exam-ready help.
+
+Rules:
+- Detect the user's language and reply in that same language.
+- If the user writes in Bangla, respond in clear, formal academic Bangla.
+- Prioritize study clarity, exam readiness, and curriculum-friendly explanations.
+- For math or technical questions, show steps cleanly.
+- For long answers, use sections such as definition, explanation, examples, key points, and practice guidance when relevant.
+- Keep the tone professional, supportive, and academically precise.`,
+};
+
+function buildSystemPrompt(
+  route: RouteDecision,
+  userContext?: {
+    classLevel?: string;
+    department?: string;
+    board?: string;
+    subjectContext?: string;
+    chatLanguage?: string;
+  },
+): string {
+  let prompt = SYSTEM_PROMPTS[route.provider];
 
   if (userContext) {
     const contextParts: string[] = [];
     if (userContext.classLevel) contextParts.push(`Academic level: ${userContext.classLevel}`);
-    if (userContext.department) contextParts.push(`Department/Stream: ${userContext.department}`);
-    if (userContext.board) contextParts.push(`Board: ${userContext.board}`);
-    if (userContext.subjectContext) contextParts.push(`Currently studying: ${userContext.subjectContext}`);
+    if (userContext.department) contextParts.push(`Department: ${userContext.department}`);
+    if (userContext.board) contextParts.push(`Board or curriculum: ${userContext.board}`);
+    if (userContext.subjectContext) contextParts.push(`Current subject: ${userContext.subjectContext}`);
     if (userContext.chatLanguage && userContext.chatLanguage !== "auto") {
-      const langName = userContext.chatLanguage === "bn" ? "বাংলা (Bangla)" : userContext.chatLanguage === "en" ? "English" : "Both Bangla and English (bilingual)";
-      contextParts.push(`Preferred response language: ${langName}`);
+      contextParts.push(`Preferred chat language: ${userContext.chatLanguage}`);
     }
 
     if (contextParts.length > 0) {
-      systemPrompt += `\n\n🎓 Student Profile:\n- ${contextParts.join("\n- ")}`;
-      systemPrompt += `\n\nIMPORTANT: Tailor your response to this student's level, board, and subject. Use examples and references relevant to their curriculum.`;
+      prompt += `\n\nStudent context:\n- ${contextParts.join("\n- ")}`;
+      prompt += "\nTailor explanations to this profile when it improves the answer.";
     }
   }
 
-  return systemPrompt;
+  return prompt;
 }
 
 async function* streamOpenAI(
@@ -298,12 +360,16 @@ async function* streamOpenAI(
   model: string,
   maxTokens: number,
 ): AsyncGenerator<string> {
+  const client = createOpenAIClient();
   const openaiMessages = [
     { role: "system" as const, content: systemPrompt },
-    ...messages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+    ...messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    })),
   ];
 
-  const stream = await openai.chat.completions.create({
+  const stream = await client.chat.completions.create({
     model,
     messages: openaiMessages,
     max_completion_tokens: maxTokens,
@@ -312,14 +378,18 @@ async function* streamOpenAI(
 
   for await (const chunk of stream) {
     const content = chunk.choices[0]?.delta?.content;
-    if (content) yield content;
+    if (content) {
+      yield content;
+    }
   }
 }
 
 export interface StreamResult {
-  provider: AIProvider;
+  provider: Exclude<AIProvider, "auto">;
   model: string;
+  mode: Exclude<AIMode, "auto">;
   taskType: TaskType;
+  routingReason: string;
   stream: AsyncGenerator<string>;
 }
 
@@ -336,18 +406,23 @@ export async function streamAIResponse(
 ): Promise<StreamResult> {
   const taskType = detectTaskType(messages);
   const complex = isComplexQuery(messages);
-  const providerId = selectProvider(taskType, complex, preferredProvider);
+  const route = selectRouteDecision(taskType, complex, preferredProvider);
+  const provider = getAvailableProviders().find((item) => item.id === route.provider);
 
-  const model = complex ? "gpt-4o" : "gpt-4o-mini";
-  const maxTokens = complex ? 4096 : 1024;
+  if (!provider || !provider.available) {
+    throw new Error("AI provider is not configured");
+  }
 
-  const systemPrompt = buildSystemPrompt(complex, userContext, providerId);
+  const { model, maxTokens } = selectModel(provider, taskType, complex);
+  const systemPrompt = buildSystemPrompt(route, userContext);
   const stream = streamOpenAI(messages, systemPrompt, model, maxTokens);
 
   return {
-    provider: providerId,
+    provider: route.provider,
     model,
+    mode: route.mode,
     taskType,
+    routingReason: route.routingReason,
     stream,
   };
 }

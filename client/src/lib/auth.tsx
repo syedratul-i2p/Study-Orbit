@@ -1,6 +1,6 @@
 import { createContext, useContext, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "./queryClient";
+import { queryClient, apiRequest, getQueryFn } from "./queryClient";
 import type { User } from "@shared/schema";
 
 type SafeUser = Omit<User, "password">;
@@ -20,6 +20,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading } = useQuery<SafeUser>({
     queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
   });
 
@@ -28,7 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await apiRequest("POST", "/api/auth/login", { email, password });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/auth/me"], data);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
@@ -38,7 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await apiRequest("POST", "/api/auth/register", { email, password, fullName, username });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/auth/me"], data);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
@@ -48,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await apiRequest("POST", "/api/auth/logout");
     },
     onSuccess: () => {
+      queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
@@ -57,7 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await apiRequest("PATCH", "/api/user/profile", data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/auth/me"], data);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
@@ -67,7 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await apiRequest("PATCH", "/api/auth/onboarding", data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/auth/me"], data);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });

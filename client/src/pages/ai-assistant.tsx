@@ -39,6 +39,9 @@ import {
   Copy,
   Check,
   GraduationCap,
+  RefreshCw,
+  Square,
+  AlertCircle,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { SummaryPanel } from "@/components/summary-panel";
@@ -63,6 +66,7 @@ interface ProviderInfo {
   id: string;
   name: string;
   available: boolean;
+  mode?: string;
   strengths: string[];
 }
 
@@ -247,16 +251,18 @@ export default function AIAssistantPage() {
   const [importData, setImportData] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>("auto");
   const [showProviderMenu, setShowProviderMenu] = useState(false);
-  const [lastMeta, setLastMeta] = useState<{ provider: string; model: string; taskType: string } | null>(null);
+  const [lastMeta, setLastMeta] = useState<{ provider: string; model: string; taskType: string; mode?: string; routingReason?: string } | null>(null);
+  const [requestError, setRequestError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const providerMenuRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const { data: subjects = [] } = useQuery<Subject[]>({
     queryKey: ["/api/subjects"],
   });
 
-  const { data: providers = [] } = useQuery<ProviderInfo[]>({
+  const { data: providers = [], refetch: refetchProviders, isFetching: providersLoading } = useQuery<ProviderInfo[]>({
     queryKey: ["/api/ai/providers"],
   });
 
@@ -278,6 +284,19 @@ export default function AIAssistantPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const availableProviders = providers.filter((provider) => provider.available);
+  const aiAvailable = availableProviders.length > 0;
+
+  useEffect(() => {
+    if (
+      selectedProvider !== "auto" &&
+      providers.length > 0 &&
+      !providers.some((provider) => provider.id === selectedProvider && provider.available)
+    ) {
+      setSelectedProvider("auto");
+    }
+  }, [providers, selectedProvider]);
+
   const loadChats = async () => {
     const all = await getAllChats();
     setChats(all);
@@ -287,7 +306,8 @@ export default function AIAssistantPage() {
   };
 
   const handleNewChat = () => {
-    const chat = createNewChat(subjectContext || undefined);
+    const chat = { ...createNewChat(subjectContext || undefined), title: t.ai.newChat };
+    setRequestError(null);
     setActiveChat(chat);
     setShowSidebar(false);
   };
@@ -295,6 +315,7 @@ export default function AIAssistantPage() {
   const handleSelectChat = async (id: string) => {
     const chat = await getChat(id);
     if (chat) {
+      setRequestError(null);
       setActiveChat(chat);
       setShowSidebar(false);
     }
@@ -303,6 +324,7 @@ export default function AIAssistantPage() {
   const handleDeleteChat = async (id: string) => {
     await deleteChat(id);
     if (activeChat?.id === id) {
+      setRequestError(null);
       setActiveChat(null);
     }
     await loadChats();
@@ -318,49 +340,40 @@ export default function AIAssistantPage() {
     }
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const streamAssistantReply = async (chat: ChatConversation) => {
+    if (!aiAvailable || isLoading) return;
 
-    let chat = activeChat;
-    if (!chat) {
-      chat = createNewChat(subjectContext || undefined);
-    }
-
-    const userMessage: ChatMessage = {
-      role: "user",
-      content: input.trim(),
+    const assistantMessage: ChatMessage = {
+      role: "assistant",
+      content: "",
       timestamp: Date.now(),
     };
 
-    if (chat.messages.length === 0) {
-      chat.title = generateChatTitle(input.trim());
-    }
+    let workingChat: ChatConversation = {
+      ...chat,
+      messages: [...chat.messages, assistantMessage],
+      updatedAt: Date.now(),
+    };
 
-    chat.messages = [...chat.messages, userMessage];
-    chat.updatedAt = Date.now();
-    setActiveChat({ ...chat });
-    setInput("");
+    setRequestError(null);
     setIsLoading(true);
+    setActiveChat(workingChat);
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    let fullContent = "";
 
     try {
-      const messages = chat.messages.map((m) => ({
-        role: m.role,
-        content: m.content,
+      const messages = chat.messages.map((message) => ({
+        role: message.role,
+        content: message.content,
       }));
-
-      const assistantMessage: ChatMessage = {
-        role: "assistant",
-        content: "",
-        timestamp: Date.now(),
-      };
-      chat.messages = [...chat.messages, assistantMessage];
-      chat.updatedAt = Date.now();
-      setActiveChat({ ...chat });
 
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        signal: abortController.signal,
         body: JSON.stringify({
           messages,
           provider: selectedProvider,
@@ -375,8 +388,8 @@ export default function AIAssistantPage() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
-          throw new Error(err.message || t.ai.responseFailed);
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.message || t.ai.responseFailed);
       }
 
       const reader = res.body?.getReader();
@@ -384,7 +397,6 @@ export default function AIAssistantPage() {
 
       const decoder = new TextDecoder();
       let buffer = "";
-      let fullContent = "";
 
       while (true) {
         const { done, value } = await reader.read();
@@ -396,6 +408,7 @@ export default function AIAssistantPage() {
 
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
+
           try {
             const event = JSON.parse(line.slice(6));
             if (event.meta) {
@@ -403,36 +416,97 @@ export default function AIAssistantPage() {
             }
             if (event.content) {
               fullContent += event.content;
-              const updatedMessages = [...chat.messages];
-              updatedMessages[updatedMessages.length - 1] = {
-                ...assistantMessage,
-                content: fullContent,
+              workingChat = {
+                ...workingChat,
+                messages: [
+                  ...workingChat.messages.slice(0, -1),
+                  { ...assistantMessage, content: fullContent },
+                ],
+                updatedAt: Date.now(),
               };
-              chat.messages = updatedMessages;
-              setActiveChat({ ...chat });
+              setActiveChat(workingChat);
             }
             if (event.error) {
               throw new Error(event.error);
             }
-          } catch (e) {
-            if (!(e instanceof SyntaxError)) throw e;
+          } catch (eventError) {
+            if (!(eventError instanceof SyntaxError)) throw eventError;
           }
         }
       }
 
-      chat.updatedAt = Date.now();
-      setActiveChat({ ...chat });
-      await saveChat(chat);
+      if (!fullContent.trim()) {
+        throw new Error(t.ai.responseEmpty);
+      }
+
+      await saveChat(workingChat);
       await loadChats();
+      setActiveChat(workingChat);
     } catch (error: any) {
+      const isAbort = error?.name === "AbortError";
+      const fallbackMessage = isAbort ? t.ai.generationStopped : error?.message || t.ai.responseFailed;
+      setRequestError(fallbackMessage);
+
+      const cleanedMessages =
+        fullContent?.trim()
+          ? workingChat.messages
+          : workingChat.messages.slice(0, -1);
+
+      const cleanedChat = {
+        ...workingChat,
+        messages: cleanedMessages,
+        updatedAt: Date.now(),
+      };
+
+      setActiveChat(cleanedChat);
+      await saveChat(cleanedChat);
+      await loadChats();
+
       toast({
-        title: t.common.error,
-        description: error.message || t.ai.responseFailed,
-        variant: "destructive",
+        title: isAbort ? t.ai.generationStoppedTitle : t.common.error,
+        description: fallbackMessage,
+        variant: isAbort ? "default" : "destructive",
       });
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
     }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading || !aiAvailable) return;
+
+    let chat = activeChat;
+    if (!chat) {
+      chat = createNewChat(subjectContext || undefined);
+    }
+
+    const userMessage: ChatMessage = {
+      role: "user",
+      content: input.trim(),
+      timestamp: Date.now(),
+    };
+
+    const nextChat: ChatConversation = {
+      ...chat,
+      title: chat.messages.length === 0 ? generateChatTitle(input.trim()) : chat.title,
+      messages: [...chat.messages, userMessage],
+      updatedAt: Date.now(),
+    };
+
+    setInput("");
+    setActiveChat(nextChat);
+    await streamAssistantReply(nextChat);
+  };
+
+  const handleRetry = async () => {
+    if (!activeChat || isLoading || !aiAvailable) return;
+    if (activeChat.messages[activeChat.messages.length - 1]?.role !== "user") return;
+    await streamAssistantReply(activeChat);
+  };
+
+  const handleStop = () => {
+    abortControllerRef.current?.abort();
   };
 
   const handleQuickAction = (action: string) => {
@@ -507,6 +581,17 @@ export default function AIAssistantPage() {
       )
     : chats;
 
+  const selectedProviderInfo =
+    selectedProvider === "auto"
+      ? null
+      : providers.find((provider) => provider.id === selectedProvider) ?? null;
+  const canRetryLastTurn =
+    Boolean(requestError) &&
+    Boolean(activeChat) &&
+    activeChat!.messages[activeChat!.messages.length - 1]?.role === "user" &&
+    aiAvailable &&
+    !isLoading;
+
   const quickActions = [
     { key: "explainSimply", label: t.ai.explainSimply, icon: HelpCircle },
     { key: "shortAnswer", label: t.ai.shortAnswer, icon: PenTool },
@@ -549,6 +634,11 @@ export default function AIAssistantPage() {
           <SummaryPanel
             label={t.ai.subjectLabel}
             value={subjectContext || t.ai.general}
+            valueClassName="mt-1 text-sm font-semibold"
+          />
+          <SummaryPanel
+            label={t.ai.modeLabel}
+            value={selectedProvider === "auto" ? t.ai.autoRouting : selectedProviderInfo?.name || t.ai.autoRouting}
             valueClassName="mt-1 text-sm font-semibold"
           />
         </div>
@@ -594,7 +684,7 @@ export default function AIAssistantPage() {
                   const Icon = providerIcons[lastMeta.provider] || Brain;
                   return <Icon className={`w-2.5 h-2.5 ${providerColors[lastMeta.provider] || ""}`} />;
                 })()}
-                {lastMeta.provider} · {lastMeta.taskType}
+                {lastMeta.mode || lastMeta.provider} · {lastMeta.taskType}
               </Badge>
             )}
 
@@ -715,15 +805,65 @@ export default function AIAssistantPage() {
           </div>
         </div>
 
+        {!aiAvailable && !providersLoading && (
+          <div className="border-b border-border/60 bg-amber-50/70 px-4 py-3 dark:bg-amber-950/20">
+            <div className="mx-auto flex max-w-3xl items-start gap-3">
+              <div className="mt-0.5 rounded-full bg-amber-100 p-1.5 dark:bg-amber-900/30">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-200" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">{t.ai.unavailableTitle}</p>
+                <p className="mt-1 text-xs leading-5 text-amber-700 dark:text-amber-200/80">{t.ai.unavailableDescription}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-xl"
+                onClick={() => refetchProviders()}
+                data-testid="button-refetch-ai-providers"
+              >
+                <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                {t.ai.retry}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {requestError && (
+          <div className="border-b border-border/60 bg-destructive/5 px-4 py-3">
+            <div className="mx-auto flex max-w-3xl items-start gap-3">
+              <div className="mt-0.5 rounded-full bg-destructive/10 p-1.5">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{t.ai.responseIssue}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{requestError}</p>
+              </div>
+              {canRetryLastTurn && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-xl"
+                  onClick={handleRetry}
+                  data-testid="button-retry-ai-request"
+                >
+                  <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                  {t.ai.retry}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         <ScrollArea className="flex-1">
           <div className="bg-[radial-gradient(circle_at_top,rgba(79,70,229,0.04),transparent_28%)] p-4">
             {!activeChat || activeChat.messages.length === 0 ? (
               <div className="flex min-h-[400px] items-center justify-center px-4">
                 <EmptyState
                   className="w-full max-w-2xl border-0 bg-transparent shadow-none"
-                  icon={<GraduationCap className="w-12 h-12 text-primary" />}
-                  title={t.ai.title}
-                  description={t.ai.workspaceDescription}
+                  icon={<GraduationCap className={`w-12 h-12 ${aiAvailable ? "text-primary" : "text-amber-500"}`} />}
+                  title={aiAvailable ? t.ai.title : t.ai.unavailableTitle}
+                  description={aiAvailable ? t.ai.workspaceDescription : t.ai.unavailableDescription}
                   action={
                     <div className="grid w-full max-w-md grid-cols-2 gap-2">
                       {quickActions.slice(0, 4).map((action) => (
@@ -733,6 +873,7 @@ export default function AIAssistantPage() {
                           size="sm"
                           className="h-auto justify-start gap-2 rounded-2xl px-4 py-3 text-xs transition-all hover:border-primary/20 hover:bg-primary/5"
                           onClick={() => handleQuickAction(action.key)}
+                          disabled={!aiAvailable}
                           data-testid={`button-action-${action.key}`}
                         >
                           <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -741,6 +882,18 @@ export default function AIAssistantPage() {
                           <span className="text-left">{action.label}</span>
                         </Button>
                       ))}
+                      {!aiAvailable && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="col-span-2 rounded-2xl"
+                          onClick={() => refetchProviders()}
+                          data-testid="button-empty-retry-providers"
+                        >
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          {t.ai.retry}
+                        </Button>
+                      )}
                     </div>
                   }
                 />
@@ -828,6 +981,7 @@ export default function AIAssistantPage() {
                     size="sm"
                     className="h-auto flex-shrink-0 gap-1 rounded-full px-2.5 py-1 text-[11px]"
                     onClick={() => handleQuickAction(action.key)}
+                    disabled={!aiAvailable}
                     data-testid={`button-quick-${action.key}`}
                   >
                     <action.icon className="w-3 h-3" />
@@ -852,20 +1006,21 @@ export default function AIAssistantPage() {
                     handleSend();
                   }
                 }}
-                placeholder={t.ai.placeholder}
+                placeholder={aiAvailable ? t.ai.placeholder : t.ai.unavailableInputPlaceholder}
                 className="min-h-[52px] max-h-[120px] resize-none rounded-2xl border-border/50 bg-muted/40 pr-12 text-sm transition-all focus:border-primary/30 focus:bg-background focus:shadow-sm"
                 rows={1}
+                disabled={!aiAvailable}
                 data-testid="textarea-ai-input"
               />
               <Button
                 size="icon"
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
+                onClick={isLoading ? handleStop : handleSend}
+                disabled={(!input.trim() && !isLoading) || (!aiAvailable && !isLoading)}
                 className="absolute bottom-1.5 right-1.5 h-8 w-8 rounded-xl shadow-sm"
                 data-testid="button-send"
               >
                 {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Square className="w-3.5 h-3.5" />
                 ) : (
                   <Send className="w-4 h-4" />
                 )}

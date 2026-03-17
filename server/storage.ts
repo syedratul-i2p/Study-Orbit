@@ -329,12 +329,41 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createChatBackup(backup: InsertChatBackup): Promise<ChatBackup> {
-    const [created] = await db.insert(chatBackups).values(backup).returning();
-    return created;
+    const existing = await db.select().from(chatBackups)
+      .where(eq(chatBackups.userId, backup.userId))
+      .orderBy(desc(chatBackups.createdAt));
+
+    if (existing.length === 0) {
+      const [created] = await db.insert(chatBackups).values(backup).returning();
+      return created;
+    }
+
+    const [latest, ...stale] = existing;
+    if (stale.length > 0) {
+      await db.delete(chatBackups).where(
+        and(
+          eq(chatBackups.userId, backup.userId),
+          ne(chatBackups.id, latest.id),
+        ),
+      );
+    }
+
+    const [updated] = await db.update(chatBackups)
+      .set({
+        data: backup.data,
+        createdAt: new Date(),
+      })
+      .where(eq(chatBackups.id, latest.id))
+      .returning();
+
+    return updated;
   }
 
   async getChatBackups(userId: number): Promise<ChatBackup[]> {
-    return db.select().from(chatBackups).where(eq(chatBackups.userId, userId)).orderBy(desc(chatBackups.createdAt));
+    return db.select().from(chatBackups)
+      .where(eq(chatBackups.userId, userId))
+      .orderBy(desc(chatBackups.createdAt))
+      .limit(1);
   }
 
   async getChatBackup(id: number): Promise<ChatBackup | undefined> {
