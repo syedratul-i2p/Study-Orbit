@@ -11,9 +11,8 @@ import { useLanguage } from "@/lib/languageContext";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { AIMarkdown } from "@/components/ai-markdown";
 import { motion, AnimatePresence } from "framer-motion";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import {
   Send,
   Plus,
@@ -69,6 +68,8 @@ interface ProviderInfo {
   mode?: string;
   strengths: string[];
 }
+
+const STREAM_IDLE_TIMEOUT_MS = 20000;
 
 const providerIcons: Record<string, typeof Brain> = {
   orbitquick: Zap,
@@ -287,6 +288,19 @@ export default function AIAssistantPage() {
   const availableProviders = providers.filter((provider) => provider.available);
   const aiAvailable = availableProviders.length > 0;
 
+  const getModeLabel = (id?: string) => {
+    const labels: Record<string, string> = {
+      auto: t.ai.autoRouting,
+      orbitquick: t.ai.providerOrbitQuick,
+      orbitdeep: t.ai.providerOrbitDeep,
+      studyexpert: t.ai.providerStudyExpert,
+      fast: t.ai.providerOrbitQuick,
+      think: t.ai.providerOrbitDeep,
+      expert: t.ai.providerStudyExpert,
+    };
+    return id ? (labels[id] || id) : t.ai.autoRouting;
+  };
+
   useEffect(() => {
     if (
       selectedProvider !== "auto" &&
@@ -362,6 +376,7 @@ export default function AIAssistantPage() {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
     let fullContent = "";
+    let streamTimedOut = false;
 
     try {
       const messages = chat.messages.map((message) => ({
@@ -397,9 +412,28 @@ export default function AIAssistantPage() {
 
       const decoder = new TextDecoder();
       let buffer = "";
+      const readWithTimeout = () =>
+        new Promise<ReadableStreamReadResult<Uint8Array>>((resolve, reject) => {
+          const timeout = window.setTimeout(() => {
+            streamTimedOut = true;
+            abortController.abort();
+            reject(new Error("STREAM_TIMEOUT"));
+          }, STREAM_IDLE_TIMEOUT_MS);
+
+          reader.read().then(
+            (result) => {
+              window.clearTimeout(timeout);
+              resolve(result);
+            },
+            (readError) => {
+              window.clearTimeout(timeout);
+              reject(readError);
+            },
+          );
+        });
 
       while (true) {
-        const { done, value } = await reader.read();
+        const { done, value } = await readWithTimeout();
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
@@ -444,7 +478,11 @@ export default function AIAssistantPage() {
       setActiveChat(workingChat);
     } catch (error: any) {
       const isAbort = error?.name === "AbortError";
-      const fallbackMessage = isAbort ? t.ai.generationStopped : error?.message || t.ai.responseFailed;
+      const fallbackMessage = streamTimedOut
+        ? t.ai.responseFailed
+        : isAbort
+          ? t.ai.generationStopped
+          : error?.message || t.ai.responseFailed;
       setRequestError(fallbackMessage);
 
       const cleanedMessages =
@@ -463,9 +501,9 @@ export default function AIAssistantPage() {
       await loadChats();
 
       toast({
-        title: isAbort ? t.ai.generationStoppedTitle : t.common.error,
+        title: streamTimedOut ? t.ai.responseIssue : isAbort ? t.ai.generationStoppedTitle : t.common.error,
         description: fallbackMessage,
-        variant: isAbort ? "default" : "destructive",
+        variant: streamTimedOut || !isAbort ? "destructive" : "default",
       });
     } finally {
       abortControllerRef.current = null;
@@ -684,7 +722,7 @@ export default function AIAssistantPage() {
                   const Icon = providerIcons[lastMeta.provider] || Brain;
                   return <Icon className={`w-2.5 h-2.5 ${providerColors[lastMeta.provider] || ""}`} />;
                 })()}
-                {lastMeta.mode || lastMeta.provider} · {lastMeta.taskType}
+                {getModeLabel(lastMeta.mode || lastMeta.provider)} · {lastMeta.taskType}
               </Badge>
             )}
 
@@ -924,9 +962,7 @@ export default function AIAssistantPage() {
                           data-testid={`message-${msg.role}-${i}`}
                         >
                           {msg.role === "assistant" ? (
-                            <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_pre]:bg-background/80 [&_pre]:border [&_pre]:border-border/50 [&_pre]:rounded-lg [&_pre]:p-3 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_code]:text-[12px] [&_code]:leading-relaxed [&_p]:text-[13px] [&_p]:leading-relaxed [&_li]:text-[13px] [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_h3]:font-semibold [&_table]:text-xs [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1 [&_blockquote]:border-l-primary/30 [&_blockquote]:text-muted-foreground">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                            </div>
+                            <AIMarkdown content={msg.content} variant="page" />
                           ) : (
                             <p className="m-0 whitespace-pre-wrap text-[13px] leading-relaxed">{msg.content}</p>
                           )}

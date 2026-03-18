@@ -202,7 +202,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl" data-testid="text-welcome">
-                  {t.dashboard.welcome}, {user?.fullName?.split(" ")[0]}
+                  {t.dashboard.welcome}
                 </h1>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
                   {t.app.tagline}

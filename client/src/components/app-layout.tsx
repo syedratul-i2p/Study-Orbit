@@ -69,7 +69,7 @@ function AppSidebar() {
           </div>
         </div>
         <div className="mt-4 rounded-2xl border border-sidebar-border/70 bg-background/70 px-3 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">{t.dashboard.welcome}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">{t.dashboard.profileLabel}</p>
           <p className="mt-1 truncate text-sm font-semibold text-foreground">{user?.fullName || t.app.name}</p>
           <p className="truncate text-xs text-muted-foreground">@{user?.username || "studyorbit"}</p>
         </div>

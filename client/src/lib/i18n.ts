@@ -133,7 +133,8 @@ const en = {
     },
   },
   dashboard: {
-    welcome: "Welcome back",
+    welcome: "Your study command center",
+    profileLabel: "Academic overview",
     todaysPlan: "Today's Plan",
     quickAdd: "Quick Add",
     startFocus: "Start Focus Session",
@@ -714,7 +715,8 @@ const bn: typeof en = {
     },
   },
   dashboard: {
-    welcome: "স্বাগতম",
+    welcome: "আপনার স্টাডি কমান্ড সেন্টার",
+    profileLabel: "একাডেমিক ওভারভিউ",
     todaysPlan: "আজকের পরিকল্পনা",
     quickAdd: "দ্রুত যোগ করুন",
     startFocus: "ফোকাস সেশন শুরু",

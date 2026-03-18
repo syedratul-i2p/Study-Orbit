@@ -7,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLanguage } from "@/lib/languageContext";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { AIMarkdown } from "@/components/ai-markdown";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain,
@@ -17,6 +19,9 @@ import {
   Sparkles,
   Zap,
   ChevronDown,
+  AlertCircle,
+  RefreshCw,
+  Square,
 } from "lucide-react";
 import {
   type ChatConversation,
@@ -34,8 +39,11 @@ interface ProviderInfo {
   id: string;
   name: string;
   available: boolean;
+  mode?: string;
   strengths: string[];
 }
+
+const STREAM_IDLE_TIMEOUT_MS = 20000;
 
 const providerIcons: Record<string, typeof Brain> = {
   orbitquick: Zap,
@@ -52,6 +60,7 @@ const providerColors: Record<string, string> = {
 export default function AIWidget() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [, navigate] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -59,15 +68,20 @@ export default function AIWidget() {
   const [activeChat, setActiveChat] = useState<ChatConversation | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>("auto");
   const [showProviderMenu, setShowProviderMenu] = useState(false);
-  const [lastMeta, setLastMeta] = useState<{ provider: string; model: string; taskType: string } | null>(null);
+  const [lastMeta, setLastMeta] = useState<{ provider: string; model: string; taskType: string; mode?: string; routingReason?: string } | null>(null);
+  const [requestError, setRequestError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const providerMenuRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const { data: providers = [] } = useQuery<ProviderInfo[]>({
+  const { data: providers = [], refetch: refetchProviders, isFetching: providersLoading } = useQuery<ProviderInfo[]>({
     queryKey: ["/api/ai/providers"],
     enabled: isOpen,
   });
+
+  const availableProviders = providers.filter((provider) => provider.available);
+  const aiAvailable = availableProviders.length > 0;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -89,55 +103,58 @@ export default function AIWidget() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (
+      selectedProvider !== "auto" &&
+      providers.length > 0 &&
+      !providers.some((provider) => provider.id === selectedProvider && provider.available)
+    ) {
+      setSelectedProvider("auto");
+    }
+  }, [providers, selectedProvider]);
+
   const handleNewChat = () => {
     const chat = createNewChat();
     setActiveChat(chat);
     setLastMeta(null);
+    setRequestError(null);
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const streamAssistantReply = async (chat: ChatConversation) => {
+    if (!aiAvailable || isLoading) return;
 
-    let chat = activeChat;
-    if (!chat) {
-      chat = createNewChat();
-    }
-
-    const userMessage: ChatMessage = {
-      role: "user",
-      content: input.trim(),
+    const assistantMessage: ChatMessage = {
+      role: "assistant",
+      content: "",
       timestamp: Date.now(),
     };
 
-    if (chat.messages.length === 0) {
-      chat.title = generateChatTitle(input.trim());
-    }
+    let workingChat: ChatConversation = {
+      ...chat,
+      messages: [...chat.messages, assistantMessage],
+      updatedAt: Date.now(),
+    };
 
-    chat.messages = [...chat.messages, userMessage];
-    chat.updatedAt = Date.now();
-    setActiveChat({ ...chat });
-    setInput("");
+    setRequestError(null);
     setIsLoading(true);
+    setActiveChat(workingChat);
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    let fullContent = "";
+    let streamTimedOut = false;
 
     try {
-      const messages = chat.messages.map((m) => ({
-        role: m.role,
-        content: m.content,
+      const messages = chat.messages.map((message) => ({
+        role: message.role,
+        content: message.content,
       }));
-
-      const assistantMessage: ChatMessage = {
-        role: "assistant",
-        content: "",
-        timestamp: Date.now(),
-      };
-      chat.messages = [...chat.messages, assistantMessage];
-      chat.updatedAt = Date.now();
-      setActiveChat({ ...chat });
 
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        signal: abortController.signal,
         body: JSON.stringify({
           messages,
           provider: selectedProvider,
@@ -151,19 +168,37 @@ export default function AIWidget() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || "Failed to get response");
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.message || t.ai.responseFailed);
       }
 
       const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response stream");
+      if (!reader) throw new Error(t.ai.responseStreamMissing);
 
       const decoder = new TextDecoder();
       let buffer = "";
-      let fullContent = "";
+      const readWithTimeout = () =>
+        new Promise<ReadableStreamReadResult<Uint8Array>>((resolve, reject) => {
+          const timeout = window.setTimeout(() => {
+            streamTimedOut = true;
+            abortController.abort();
+            reject(new Error("STREAM_TIMEOUT"));
+          }, STREAM_IDLE_TIMEOUT_MS);
+
+          reader.read().then(
+            (result) => {
+              window.clearTimeout(timeout);
+              resolve(result);
+            },
+            (readError) => {
+              window.clearTimeout(timeout);
+              reject(readError);
+            },
+          );
+        });
 
       while (true) {
-        const { done, value } = await reader.read();
+        const { done, value } = await readWithTimeout();
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
@@ -172,6 +207,7 @@ export default function AIWidget() {
 
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
+
           try {
             const event = JSON.parse(line.slice(6));
             if (event.meta) {
@@ -179,31 +215,114 @@ export default function AIWidget() {
             }
             if (event.content) {
               fullContent += event.content;
-              const updatedMessages = [...chat.messages];
-              updatedMessages[updatedMessages.length - 1] = {
-                ...assistantMessage,
-                content: fullContent,
+              workingChat = {
+                ...workingChat,
+                messages: [
+                  ...workingChat.messages.slice(0, -1),
+                  {
+                    ...assistantMessage,
+                    content: fullContent,
+                  },
+                ],
+                updatedAt: Date.now(),
               };
-              chat.messages = updatedMessages;
-              setActiveChat({ ...chat });
+              setActiveChat(workingChat);
             }
             if (event.error) {
               throw new Error(event.error);
             }
-          } catch (e) {
-            if (!(e instanceof SyntaxError)) throw e;
+          } catch (parseError) {
+            if (!(parseError instanceof SyntaxError)) throw parseError;
           }
         }
       }
 
-      chat.updatedAt = Date.now();
-      setActiveChat({ ...chat });
-      await saveChat(chat);
+      if (!fullContent.trim()) {
+        throw new Error(t.ai.responseEmpty);
+      }
+
+      workingChat = {
+        ...workingChat,
+        updatedAt: Date.now(),
+      };
+      setActiveChat(workingChat);
+      await saveChat(workingChat);
     } catch (error: any) {
-      console.error("AI Widget error:", error);
+      const wasAborted = abortController.signal.aborted;
+      const message = streamTimedOut
+        ? t.ai.responseFailed
+        : wasAborted
+          ? t.ai.generationStopped
+          : error?.message || t.ai.responseFailed;
+
+      const fallbackChat: ChatConversation = {
+        ...workingChat,
+        messages: fullContent.trim()
+          ? [
+              ...workingChat.messages.slice(0, -1),
+              {
+                ...assistantMessage,
+                content: fullContent,
+              },
+            ]
+          : workingChat.messages.slice(0, -1),
+        updatedAt: Date.now(),
+      };
+
+      setActiveChat(fallbackChat);
+      await saveChat(fallbackChat);
+      setRequestError(message);
+
+      toast({
+        title: streamTimedOut ? t.ai.responseIssue : wasAborted ? t.ai.generationStoppedTitle : t.ai.responseIssue,
+        description: message,
+        variant: streamTimedOut || !wasAborted ? "destructive" : "default",
+      });
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
     }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading || !aiAvailable) return;
+
+    let chat = activeChat;
+    if (!chat) {
+      chat = createNewChat();
+    }
+
+    const content = input.trim();
+    const userMessage: ChatMessage = {
+      role: "user",
+      content,
+      timestamp: Date.now(),
+    };
+
+    const nextChat: ChatConversation = {
+      ...chat,
+      title: chat.messages.length === 0 ? generateChatTitle(content) : chat.title,
+      messages: [...chat.messages, userMessage],
+      updatedAt: Date.now(),
+    };
+
+    setActiveChat(nextChat);
+    setInput("");
+    await streamAssistantReply(nextChat);
+  };
+
+  const handleRetry = async () => {
+    if (!activeChat || isLoading || !aiAvailable) return;
+    const lastMessage = activeChat.messages[activeChat.messages.length - 1];
+    if (!lastMessage || lastMessage.role !== "user") return;
+    await streamAssistantReply({
+      ...activeChat,
+      updatedAt: Date.now(),
+    });
+  };
+
+  const handleStop = () => {
+    abortControllerRef.current?.abort();
   };
 
   const getProviderIcon = (id: string) => {
@@ -217,11 +336,20 @@ export default function AIWidget() {
       orbitquick: t.ai.providerOrbitQuick,
       orbitdeep: t.ai.providerOrbitDeep,
       studyexpert: t.ai.providerStudyExpert,
+      fast: t.ai.providerOrbitQuick,
+      think: t.ai.providerOrbitDeep,
+      expert: t.ai.providerStudyExpert,
     };
     return labels[id] || id;
   };
 
   const messages = activeChat?.messages || [];
+  const canRetryLastTurn = Boolean(
+    activeChat &&
+    activeChat.messages.length > 0 &&
+    activeChat.messages[activeChat.messages.length - 1]?.role === "user" &&
+    !isLoading,
+  );
 
   return (
     <>
@@ -355,19 +483,70 @@ export default function AIWidget() {
                       const Icon = getProviderIcon(lastMeta.provider);
                       return <Icon className={`w-2.5 h-2.5 ${providerColors[lastMeta.provider] || ""}`} />;
                     })()}
-                    {lastMeta.provider}
+                    {getProviderLabel(lastMeta.mode || lastMeta.provider)}
                   </Badge>
                 )}
               </div>
 
               <ScrollArea className="flex-1 p-3">
+                {!aiAvailable && (
+                  <div className="mb-3 rounded-2xl border border-amber-500/25 bg-amber-500/8 p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="mt-0.5 h-4 w-4 text-amber-500" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold">{t.ai.unavailableTitle}</p>
+                        <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
+                          {t.ai.unavailableDescription}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 rounded-xl px-2 text-[10px]"
+                        onClick={() => refetchProviders()}
+                        disabled={providersLoading}
+                        data-testid="button-widget-retry-providers"
+                      >
+                        <RefreshCw className={`mr-1 h-3 w-3 ${providersLoading ? "animate-spin" : ""}`} />
+                        {t.ai.retry}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {requestError && (
+                  <div className="mb-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold">{t.ai.responseIssue}</p>
+                        <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{requestError}</p>
+                      </div>
+                      {canRetryLastTurn && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 rounded-xl px-2 text-[10px]"
+                          onClick={handleRetry}
+                          data-testid="button-widget-retry-request"
+                        >
+                          <RefreshCw className="mr-1 h-3 w-3" />
+                          {t.ai.retry}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center px-4">
                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center mb-3">
-                      <Brain className="w-7 h-7 text-primary" />
+                      <Brain className={`w-7 h-7 ${aiAvailable ? "text-primary" : "text-amber-500"}`} />
                     </div>
-                    <p className="font-semibold text-sm mb-1">{t.ai.widgetTitle}</p>
-                    <p className="text-xs text-muted-foreground mb-4">{t.ai.widgetSubtitle}</p>
+                    <p className="font-semibold text-sm mb-1">{aiAvailable ? t.ai.widgetTitle : t.ai.unavailableTitle}</p>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      {aiAvailable ? t.ai.widgetSubtitle : t.ai.unavailableDescription}
+                    </p>
                     <div className="flex flex-wrap justify-center gap-1.5">
                       {[
                         { label: t.ai.explainSimply, q: "Explain quantum physics simply" },
@@ -377,8 +556,14 @@ export default function AIWidget() {
                         <Badge
                           key={item.label}
                           variant="secondary"
-                          className="cursor-pointer text-[10px] py-1 px-2 hover:bg-primary/10 transition-colors"
-                          onClick={() => setInput(item.q)}
+                          className={`text-[10px] py-1 px-2 transition-colors ${
+                            aiAvailable ? "cursor-pointer hover:bg-primary/10" : "cursor-not-allowed opacity-60"
+                          }`}
+                          onClick={() => {
+                            if (aiAvailable) {
+                              setInput(item.q);
+                            }
+                          }}
                           data-testid={`widget-quick-${item.label.replace(/\s/g, "-").toLowerCase()}`}
                         >
                           {item.label}
@@ -403,7 +588,11 @@ export default function AIWidget() {
                           }`}
                           data-testid={`widget-msg-${msg.role}-${i}`}
                         >
-                          <p className="whitespace-pre-wrap">{msg.content}</p>
+                          {msg.role === "assistant" ? (
+                            <AIMarkdown content={msg.content} variant="widget" />
+                          ) : (
+                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                          )}
                         </div>
                       </motion.div>
                     ))}
@@ -432,20 +621,21 @@ export default function AIWidget() {
                         handleSend();
                       }
                     }}
-                    placeholder={t.ai.widgetPlaceholder}
+                    placeholder={aiAvailable ? t.ai.widgetPlaceholder : t.ai.unavailableInputPlaceholder}
                     className="resize-none min-h-[36px] max-h-[80px] text-xs rounded-xl bg-muted/50 border-transparent focus:border-primary/30"
                     rows={1}
+                    disabled={!aiAvailable}
                     data-testid="widget-textarea"
                   />
                   <Button
                     size="icon"
                     className="h-9 w-9 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 flex-shrink-0"
-                    onClick={handleSend}
-                    disabled={!input.trim() || isLoading}
+                    onClick={isLoading ? handleStop : handleSend}
+                    disabled={(!input.trim() && !isLoading) || (!aiAvailable && !isLoading)}
                     data-testid="widget-send"
                   >
                     {isLoading ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <Square className="w-3.5 h-3.5" />
                     ) : (
                       <Send className="w-3.5 h-3.5" />
                     )}
